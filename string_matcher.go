@@ -4,8 +4,10 @@ import "sort"
 
 type StringMatcher map[string]bool
 
-func (sm *StringMatcher) Append(s string) {
-	(*sm)[s] = true
+func (sm *StringMatcher) Append(ss ...string) {
+	for _, s := range ss {
+		(*sm)[s] = true
+	}
 }
 
 func (sm StringMatcher) Match(s string) bool {
