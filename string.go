@@ -52,6 +52,17 @@ func StrInArray(str string, arr []string) bool {
 	return false
 }
 
+// ArrayContainsStrs returns true if arr contains any of the passed
+// strings
+func ArrayContainsStrs(arr []string, strs ...string) bool {
+	for _, str := range strs {
+		if StrInArray(str, arr) {
+			return true
+		}
+	}
+	return false
+}
+
 func ToString(i interface{}) string {
 	if i == nil {
 		return ""
