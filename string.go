@@ -100,3 +100,12 @@ func StrSliceToInterfaceSlice(s []string) []interface{} {
 	}
 	return in
 }
+
+// InterfaceSliceToStrSlice converts a slice of string to slice of interface
+func InterfaceSliceToStrSlice(i []interface{}) []string {
+	sn := make([]string, len(i))
+	for idx, i0 := range i {
+		sn[idx] = fmt.Sprintf("%v", i0)
+	}
+	return sn
+}
