@@ -11,10 +11,21 @@ import (
 	"github.com/pkg/errors"
 )
 
+type EnvMap map[string]string
+
 // GetEnv returns the os environement. Skips
 // values not matching the prefix regexp re.
-func GetEnv(re string) map[string]string {
+func GetEnv(re string) EnvMap {
 	return MapValues(os.Environ(), re)
+}
+
+// Env reassembles EnvMap to Env
+func (em EnvMap) Env() (env []string) {
+	// initialize with <nil>
+	for k, v := range em {
+		env = append(env, k+"="+v)
+	}
+	return env
 }
 
 // MapValues returns the full set of variables optionally starting with matching
