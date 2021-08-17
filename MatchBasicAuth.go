@@ -28,13 +28,22 @@ func MatchBasicAuth(auth string, basicAuth map[string]string) bool {
 	}
 
 	for user, pass := range basicAuth {
+		if pair[0] != user {
+			continue
+		}
+		// try matching without bcrypt
+		if pair[1] == pass {
+			return true
+		}
+		// try bcrypt
 		err := bcrypt.CompareHashAndPassword([]byte(pass), []byte(pair[1]))
 		// if err != nil {
 		// 	println(err.Error())
 		// }
-		if pair[0] == user && err == nil {
-			return true
+		if err != nil {
+			return false
 		}
+		return true
 	}
 
 	return false
