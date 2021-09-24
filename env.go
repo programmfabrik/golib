@@ -86,8 +86,10 @@ func SetInStruct(
 	return nil
 }
 
-var errNotAddressable = errors.New("Not addressable")
-var errNoStruct = errors.New("No struct")
+var (
+	errNoStruct       = errors.New("No struct")
+	errNotAddressable = errors.New("Not addressable")
+)
 
 func setData(keyParts []string, value string, data interface{}, eq func(string) string, path ...string) (err error) {
 	// pp.Println(keyParts)
@@ -100,45 +102,52 @@ func setData(keyParts []string, value string, data interface{}, eq func(string) 
 		return errNotAddressable
 	}
 	t := rv.Type()
+	matched := false
 	for i := 0; i < rv.NumField(); i++ {
 		field := t.Field(i)
-		if eq(field.Name) == eq(keyParts[0]) {
-			fv := rv.Field(i)
-			path2 := make([]string, len(path))
-			copy(path2, path)
-			path2 = append(path2, field.Name)
-			if len(keyParts) > 1 {
-				err = setData(keyParts[1:], value, fv.Addr().Interface(), eq, path2...)
-				if err != nil {
-					return err
-				}
-			} else {
-				kpath := strings.Join(path2, ".")
-				// println("setting", strings.Join(path2, "."), fv.Type().String(), value)
-				t := fv.Type().String()
-				switch t {
-				case "bool":
-					fv.SetBool(GetBool(value))
-				case "int", "int64", "int32":
-					i, err := strconv.ParseInt(value, 10, 64)
-					if err != nil {
-						return errors.Wrapf(err, "Unable to unmarshal %q into key %q", value, kpath)
-					}
-					fv.SetInt(i)
-				case "string":
-					fv.SetString(value)
-				case "[]string":
-					err = json.Unmarshal([]byte(value), fv.Addr().Interface())
-					if err != nil {
-						return errors.Wrapf(err, "Unable to unmarshal %q into key %q", value, kpath)
-					}
-
-				default:
-					return errors.Errorf("Unsupported type %q for key %q", t, kpath)
-				}
-				// thats the leaf of the branch -> set the value
-			}
+		if eq(field.Name) != eq(keyParts[0]) {
+			continue
 		}
+		matched = true
+		fv := rv.Field(i)
+		path2 := make([]string, len(path))
+		copy(path2, path)
+		path2 = append(path2, field.Name)
+		if len(keyParts) > 1 {
+			// more parts left, dive
+			err = setData(keyParts[1:], value, fv.Addr().Interface(), eq, path2...)
+			if err != nil {
+				return err
+			}
+		} else {
+			kpath := strings.Join(path2, ".")
+			// println("setting", strings.Join(path2, "."), fv.Type().String(), value)
+			t := fv.Type().String()
+			switch t {
+			case "bool":
+				fv.SetBool(GetBool(value))
+			case "int", "int64", "int32":
+				i, err := strconv.ParseInt(value, 10, 64)
+				if err != nil {
+					return errors.Wrapf(err, "Unable to unmarshal %q into key %q", value, kpath)
+				}
+				fv.SetInt(i)
+			case "string":
+				fv.SetString(value)
+			case "[]string":
+				err = json.Unmarshal([]byte(value), fv.Addr().Interface())
+				if err != nil {
+					return errors.Wrapf(err, "Unable to unmarshal %q into key %q", value, kpath)
+				}
+
+			default:
+				return errors.Errorf("Unsupported type %q for key %q", t, kpath)
+			}
+			// thats the leaf of the branch -> set the value
+		}
+	}
+	if !matched {
+		// currently ignored
 	}
 	return nil
 }
