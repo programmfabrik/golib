@@ -121,7 +121,15 @@ func JsonUnmarshalQuery(qv url.Values, target interface{}) error {
 		if err != nil {
 			mm = vs[0]
 		}
-		m[k] = mm
+		switch v := mm.(type) {
+		case string:
+			if v == "" {
+				continue
+			}
+			m[k] = v
+		default:
+			m[k] = v
+		}
 	}
 	return JsonUnmarshalObject(m, target)
 }
