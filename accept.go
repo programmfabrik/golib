@@ -1,4 +1,4 @@
-package lib
+package golib
 
 // Copy from https://github.com/markusthoemmes/goautoneg/blob/master/accept.go
 

@@ -1,4 +1,4 @@
-package lib
+package golib
 
 import "golang.org/x/text/language"
 

@@ -1,9 +1,10 @@
-package lib
+package golib
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"io/ioutil"
+
+	"github.com/pkg/errors"
 )
 
 func UnmarshalJsonFile(path string, out interface{}) error {

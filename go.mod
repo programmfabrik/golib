@@ -1,4 +1,4 @@
-module github.com/programmfabrik/go-lib
+module github.com/programmfabrik/golib
 
 go 1.16
 

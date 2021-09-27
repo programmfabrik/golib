@@ -1,4 +1,4 @@
-package lib
+package golib
 
 import "github.com/logrusorgru/aurora"
 

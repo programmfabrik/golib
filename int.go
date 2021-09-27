@@ -1,4 +1,4 @@
-package lib
+package golib
 
 import (
 	"math"
@@ -23,6 +23,15 @@ func Int64SliceToInterfaceSlice(i []int64) []interface{} {
 	return in
 }
 
+// Int64Merge returns a new slice with all items from a and b
+// merged together, duplicates removed
+func Int64Merge(a, b []int64) (merged []int64) {
+	merged, bOnly, both := Int64Intersect(a, b)
+	return append(merged, append(bOnly, both...)...)
+}
+
+// Int64Intersect intersects a and b. It returns three slices,
+// 1. items only in a, 2. items only in b, 3. items in both.
 func Int64Intersect(a, b []int64) (aOnly, bOnly, both []int64) {
 	mA, mB, all :=
 		map[int64]bool{},

@@ -1,4 +1,4 @@
-package lib
+package golib
 
 // UniqueStrings returns all unique strings
 func UniqueStrings(in []string) (out []string) {
