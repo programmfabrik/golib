@@ -43,6 +43,18 @@ func CutStr(s string, l int, suffix string) string {
 	return s
 }
 
+// PadStr returns string s filled to a length of padWidth. If s is longer than pw
+// string will be cut to the length. If padWidth <= 0 s will be returned unchanged
+func PadStr(s string, padWidth int) string {
+	if padWidth <= 0 {
+		return s
+	}
+	if len(s) < padWidth {
+		return s + strings.Repeat(" ", padWidth-len(s))
+	}
+	return s[0:padWidth]
+}
+
 func StrInArray(str string, arr []string) bool {
 	for _, item := range arr {
 		if item == str {
