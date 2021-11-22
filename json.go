@@ -46,9 +46,8 @@ func JsonReadFile(fn string, v interface{}) error {
 	return JsonUnmarshalReader(reader, v)
 }
 
-func JsonUnmarshalReader(r io.Reader, v interface{}) error {
-	dec := json.NewDecoder(r)
-	err := dec.Decode(&v)
+func JsonUnmarshalReader(r io.Reader, v interface{}) (err error) {
+	err = json.NewDecoder(r).Decode(&v)
 	if err != nil {
 		return fmt.Errorf("json.Decode io.reader error: %w", err)
 	}
@@ -66,8 +65,8 @@ func JsonUnmarshalReaderStrict(r io.Reader, v interface{}) error {
 }
 
 func JsonUnmarshalReadCloser(r io.ReadCloser, v interface{}) error {
-	err := JsonUnmarshalReader(r, v)
 	defer r.Close()
+	err := JsonUnmarshalReader(r, v)
 	if err != nil {
 		return err
 	}
