@@ -1,7 +1,7 @@
 package golib
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 )
 
 type CountWriter struct {
@@ -18,11 +18,13 @@ func NewLimitCountWriter(limit int64) CountWriter {
 	return CountWriter{Int64Ref(0), limit}
 }
 
+var LimitExceeded = errors.New("Limit exceeded")
+
 func (cbw CountWriter) Write(p []byte) (n int, err error) {
 	n = len(p)
 	*cbw.bytes += int64(n)
 	if cbw.limit > 0 && *cbw.bytes > cbw.limit {
-		return n, fmt.Errorf("Exceeded writer limit. Limit: %d, Wrote so far: %d", cbw.limit, *cbw.bytes)
+		return n, LimitExceeded
 	}
 	return n, nil
 }
