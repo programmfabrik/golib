@@ -6,8 +6,8 @@ func UniqueStrings(in []string) (out []string) {
 	for _, s := range in {
 		if !sMap[s] {
 			out = append(out, s)
+			sMap[s] = true
 		}
-		sMap[s] = true
 	}
 	return out
 }
