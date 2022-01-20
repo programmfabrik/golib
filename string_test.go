@@ -22,3 +22,9 @@ func TestCut(t *testing.T) {
 
 	assert.Equal(t, e, CutStrInArray(s, 15, "..."))
 }
+
+func TestPadStr(t *testing.T) {
+	assert.Equal(t, "Ähre   ", PadStr("Ähre", 7))
+	assert.Equal(t, "Ähr", PadStr("Ähre", 3))
+	assert.Equal(t, "Ähre", PadStr("Ähre", 4))
+}

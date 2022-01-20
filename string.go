@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"golang.org/x/text/cases"
 )
@@ -46,15 +47,21 @@ func CutStr(s string, l int, suffix string) string {
 }
 
 // PadStr returns string s filled to a length of padWidth. If s is longer than pw
-// string will be cut to the length. If padWidth <= 0 s will be returned unchanged
+// string will be cut to the length. If padWidth <= 0 s will be returned unchanged.
+// The counting of characters is rune based. So "Ä" counts as one.
 func PadStr(s string, padWidth int) string {
 	if padWidth <= 0 {
 		return s
 	}
-	if len(s) < padWidth {
-		return s + strings.Repeat(" ", padWidth-len(s))
+	l := utf8.RuneCountInString(s)
+	switch {
+	case l == padWidth:
+		return s
+	case l < padWidth:
+		return s + strings.Repeat(" ", padWidth-l)
+	default:
+		return string([]rune(s)[0:padWidth])
 	}
-	return s[0:padWidth]
 }
 
 func StrInArray(str string, arr []string) bool {
