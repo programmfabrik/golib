@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"golang.org/x/text/cases"
 )
 
 func PushOntoStringArray(arr []string, str string) []string {
@@ -120,4 +122,9 @@ func InterfaceSliceToStrSlice(i []interface{}) []string {
 		sn[idx] = fmt.Sprintf("%v", i0)
 	}
 	return sn
+}
+
+func FoldStr(s string) string {
+	c := cases.Fold()
+	return c.String(s)
 }
