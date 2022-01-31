@@ -70,8 +70,10 @@ func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 		// Copy data from ZIP to disk
 		_, err = io.Copy(of, rc)
 		if err != nil {
+			of.Close()
 			return errors.Wrapf(err, "Copy to file failed: %q", fn)
 		}
+		of.Close()
 		rc.Close()
 	}
 	r.Close()
