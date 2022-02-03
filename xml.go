@@ -3,9 +3,11 @@ package golib
 import (
 	"encoding/xml"
 	"strconv"
+
+	"github.com/antchfx/xmlquery"
 )
 
-func AttrByName(attrs []xml.Attr, name string) string {
+func AttrByName(attrs []xmlquery.Attr, name string) string {
 	for _, attr := range attrs {
 		if attr.Name.Local == name {
 			return attr.Value
