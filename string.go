@@ -9,13 +9,16 @@ import (
 	"golang.org/x/text/cases"
 )
 
-func PushOntoStringArray(arr []string, str string) []string {
-	for _, s := range arr {
-		if s == str {
-			return arr
+// PushOntoStringArray adds str(s) to arr if missing
+func PushOntoStringArray(arr []string, strs ...string) (arr1 []string) {
+	arr1 = arr
+	for _, str := range strs {
+		if StrInArray(str, arr1) {
+			continue
 		}
+		arr1 = append(arr1, str)
 	}
-	return append(arr, str)
+	return arr1
 }
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
