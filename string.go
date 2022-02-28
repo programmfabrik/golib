@@ -40,11 +40,20 @@ func CutStrInArray(arr []string, l int, suffix string) (arr2 []string) {
 	return arr2
 }
 
-// CurStr cuts s if is longer than "len"
+// CutStr cuts s if is longer than "len"
 // When a string is cut, the suffix is added
 func CutStr(s string, l int, suffix string) string {
 	if len(s) > l {
 		return s[0:l] + suffix
+	}
+	return s
+}
+
+// CutRunes works like CutStr but counts runes not bytes
+func CutRunes(s string, l int, suffix string) string {
+	r := []rune(s)
+	if len(r) > l {
+		return string(r[0:l]) + suffix
 	}
 	return s
 }
