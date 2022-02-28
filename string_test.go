@@ -28,3 +28,7 @@ func TestPadStr(t *testing.T) {
 	assert.Equal(t, "Ähr", PadStr("Ähre", 3))
 	assert.Equal(t, "Ähre", PadStr("Ähre", 4))
 }
+
+func TestSplitChunks(t *testing.T) {
+	assert.Equal(t, []string{"Ä", "Ö", "ß ", "Üa", "bde", "fg"}, StringByteChunks("ÄÖß Üabdefg", 3))
+}

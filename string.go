@@ -139,25 +139,29 @@ func FoldStr(s string) string {
 	return c.String(s)
 }
 
-// Split string s into chunks of a max size of chunkSize
-func StringChunks(s string, chunkSize int) []string {
+// Split string s into byte chunks of a max size of chunkSize Each string
+// returned has a maximum length of byteChunkSize The split is UTF-8 safe.
+func StringByteChunks(s string, byteChunkSize int) (chunks []string) {
 	if len(s) == 0 {
 		return nil
 	}
-	if chunkSize >= len(s) {
+	if byteChunkSize >= len(s) {
 		return []string{s}
 	}
-	var chunks []string = make([]string, 0, (len(s)-1)/chunkSize+1)
-	currentLen := 0
-	currentStart := 0
-	for i := range s {
-		if currentLen == chunkSize {
-			chunks = append(chunks, s[currentStart:i])
-			currentLen = 0
-			currentStart = i
+	chunks = []string{}
+	chars := []byte{}
+	chunkOffset := 0
+	for idx, charRune := range s {
+		char := string(charRune)
+		if idx-chunkOffset+len(char) > byteChunkSize {
+			// last char caused an overflow, add
+			// to the previous last
+			chunks = append(chunks, string(chars))
+			chars = []byte{}
+			chunkOffset = idx
 		}
-		currentLen++
+		chars = append(chars, []byte(char)...)
 	}
-	chunks = append(chunks, s[currentStart:])
+	chunks = append(chunks, string(chars))
 	return chunks
 }
