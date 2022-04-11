@@ -105,7 +105,7 @@ func setData(keyParts []string, value string, data interface{}, eq func(string) 
 	matched := false
 	for i := 0; i < rv.NumField(); i++ {
 		field := t.Field(i)
-		if eq(field.Name) != eq(keyParts[0]) {
+		if eq(field.Name) != eq(keyParts[0]) || !field.IsExported() {
 			continue
 		}
 		matched = true
@@ -113,6 +113,7 @@ func setData(keyParts []string, value string, data interface{}, eq func(string) 
 		path2 := make([]string, len(path))
 		copy(path2, path)
 		path2 = append(path2, field.Name)
+
 		if len(keyParts) > 1 {
 			// more parts left, dive
 			err = setData(keyParts[1:], value, fv.Addr().Interface(), eq, path2...)
@@ -122,8 +123,7 @@ func setData(keyParts []string, value string, data interface{}, eq func(string) 
 		} else {
 			kpath := strings.Join(path2, ".")
 			// println("setting", strings.Join(path2, "."), fv.Type().String(), value)
-			t := fv.Type().String()
-			switch t {
+			switch fv.Type().String() {
 			case "bool":
 				fv.SetBool(GetBool(value))
 			case "int", "int64", "int32":
