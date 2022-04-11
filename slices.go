@@ -1,6 +1,6 @@
 package golib
 
-func SliceFilter[T any](t []T, keep func(T) bool) (t2 []T) {
+func SliceFilter[T ~[]E, E any](t T, keep func(E) bool) (t2 T) {
 	if keep == nil {
 		return t
 	}
