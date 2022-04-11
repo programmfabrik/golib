@@ -12,11 +12,11 @@ import (
 )
 
 // UnpackZipFile reads zipData and unpacks the contents of the zip
-// into targetDir.
+// into targetDir. targetDir must exist.
 func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 	zipFile, err := ioutil.TempFile(targetDir, "")
 	if err != nil {
-		return errors.Wrap(err, "Error installing plugin. Writing ZIP failed.")
+		return errors.Wrap(err, "Error installing plugin. Writing ZIP failed")
 	}
 
 	defer func() {
@@ -26,12 +26,12 @@ func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 
 	_, err = io.Copy(zipFile, zipData)
 	if err != nil {
-		return errors.Wrap(err, "Error installing plugin. Copying ZIP failed.")
+		return errors.Wrap(err, "Error installing plugin. Copying ZIP failed")
 	}
 
 	r, err := zip.OpenReader(zipFile.Name())
 	if err != nil {
-		return errors.Wrap(err, "Opening ZIP failed.")
+		return errors.Wrap(err, "Opening ZIP failed")
 	}
 
 	// Iterate through the files in the archive,
