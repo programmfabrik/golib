@@ -55,6 +55,10 @@ func TestSetInStruct(t *testing.T) {
 			Nested  struct {
 				DSN string
 			}
+			MapMe map[string]struct {
+				Name  string
+				Value int
+			}
 		}
 	}
 
@@ -66,6 +70,7 @@ func TestSetInStruct(t *testing.T) {
 		"INNER_test":       "test",
 		"INNER_TESTARR":    `["test1", "test2"]`,
 		"INNER_NESTED_DSN": "henk-db",
+		// "INNER_MAPME_torsten_NAME": "mein name is torsten",
 	}, "_", func(s string) string { return strings.ToUpper(s) }, &ct)
 	if !assert.NoError(t, err) {
 		return
@@ -79,6 +84,9 @@ func TestSetInStruct(t *testing.T) {
 	if !assert.Equal(t, "henk-db", ct.Inner.Nested.DSN) {
 		return
 	}
+	// if !assert.Equal(t, "mein name ist torsten", ct.Inner.MapMe["torsten"].Name) {
+	// 	return
+	// }
 	if !assert.Equal(t, 4, ct.Int) {
 		return
 	}
