@@ -1,12 +1,15 @@
 package golib
 
 import (
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
 
 type Replacer struct {
-	repl map[string]string
+	EmptyKeys []*regexp.Regexp // regexp to match empty key
+	repl      map[string]string
 }
 
 func (rep *Replacer) Set(key, value string) {
@@ -24,12 +27,31 @@ func (rep *Replacer) SetInt64(key string, value int64) {
 	rep.Set(key, strconv.FormatInt(value, 10))
 }
 
+func (rep *Replacer) AddEmptyKeyReplacer(s string) {
+	rep.EmptyKeys = append(rep.EmptyKeys, regexp.MustCompile(s))
+}
+
 func (rep *Replacer) Replace(s string) string {
 	if rep == nil {
 		return s
 	}
 	for key, value := range rep.repl {
 		s = strings.ReplaceAll(s, key, value)
+	}
+	for _, emptyKey := range rep.EmptyKeys {
+		s = string(emptyKey.ReplaceAllFunc([]byte(s), func(m []byte) []byte { return nil }))
+	}
+	return s
+}
+
+func (rep Replacer) Dump() (s []string) {
+	keys := []string{}
+	for key := range rep.repl {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		s = append(s, key+"="+rep.repl[key])
 	}
 	return s
 }
