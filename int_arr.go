@@ -3,6 +3,7 @@ package golib
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -144,6 +145,13 @@ func (ic1 IntArr) Diff(ic2 IntArr) IntDiffMap {
 	}
 
 	return m
+}
+
+func (ia IntArr) Sort() IntArr {
+	sort.Slice(ia, func(i, j int) bool {
+		return ia[i] < ia[j]
+	})
+	return ia
 }
 
 func Int64InArray(id int64, arr []int64) bool {
