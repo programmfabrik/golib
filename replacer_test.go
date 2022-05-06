@@ -9,7 +9,9 @@ import (
 
 func TestReplacer1(t *testing.T) {
 	r := Replacer{
-		EmptyKey: regexp.MustCompile(`%.*?%`),
+		EmptyKeys: []*regexp.Regexp{
+			regexp.MustCompile(`%.*?%`),
+		},
 	}
 	r.Set(`%a%`, `A`)
 	r.Set(`%b%`, `B`)
