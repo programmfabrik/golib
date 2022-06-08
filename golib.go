@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Max returns the larger of x or y.
@@ -48,7 +49,8 @@ func GetInt(s string, d int64) int64 {
 
 // GetBool returns bool from a string
 func GetBool(s string) bool {
-	if s == "true" || s == "1" {
+	switch strings.ToLower(s) {
+	case "true", "1", "yes":
 		return true
 	}
 	return false
