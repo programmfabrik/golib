@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/yudai/pp"
 )
 
 type EnvMap map[string]string
@@ -76,6 +77,8 @@ func SetInStruct(
 			switch err {
 			case errNoStruct:
 				return errors.Errorf(`%q needs to be struct but is "%T"`, key, value)
+			case errNoMapString:
+				return errors.Errorf(`%q needs to be a map[string]`, key)
 			case errNotAddressable:
 				return errors.Errorf(`%q needs to be addressable`, key)
 			default:
@@ -88,6 +91,7 @@ func SetInStruct(
 
 var (
 	errNoStruct       = errors.New("No struct")
+	errNoMapString    = errors.New("No map string")
 	errNotAddressable = errors.New("Not addressable")
 )
 
@@ -95,11 +99,33 @@ func setData(keyParts []string, value string, data interface{}, eq func(string) 
 	// pp.Println(keyParts)
 
 	rv := reflect.ValueOf(data).Elem()
-	if rv.Kind() != reflect.Struct {
+
+	// println("setData", rv.Type().String())
+	var rvMap, rvMapIndex reflect.Value
+	var haveMap bool
+	switch rv.Kind() {
+	case reflect.Map:
+		rvMap = rv
+		rvMapIndex = reflect.ValueOf(keyParts[0])
+		rv = rv.MapIndex(rvMapIndex)
+		haveMap = true
+		if !rvMap.CanAddr() {
+			return errNotAddressable
+		}
+		if !rv.CanAddr() {
+			rv2 := rv
+			println("unable to addr struct!", rv2.Addr().CanAddr())
+		}
+		keyParts = keyParts[1:]
+	case reflect.Struct:
+		if !rv.CanAddr() {
+			return errNotAddressable
+		}
+	default:
 		return errNoStruct
 	}
-	if !rv.CanAddr() {
-		return errNotAddressable
+	if rv.Kind() != reflect.Struct {
+		return errNoStruct
 	}
 	t := rv.Type()
 	matched := false
@@ -116,13 +142,30 @@ func setData(keyParts []string, value string, data interface{}, eq func(string) 
 
 		if len(keyParts) > 1 {
 			// more parts left, dive
+			println(">", strings.Join(keyParts[1:], "."), fv.Type().Kind().String(), value)
+			if fv.Type().Kind() == reflect.Map {
+				if len(keyParts[1:]) < 2 || fv.Type().Key().Kind() != reflect.String {
+					return errNoMapString
+				}
+				// set keyParts[1:2] inside the map
+				println(fv.IsNil())
+				if fv.IsNil() {
+					fv.Set(reflect.MakeMap(fv.Type()))
+				}
+				mKey := reflect.ValueOf(keyParts[1:2][0])
+				fv2 := fv.MapIndex(mKey)
+				if !fv2.IsValid() {
+					fv.SetMapIndex(mKey, reflect.Zero(fv.Type().Elem()))
+				}
+				Pln("we have a map! %s v %v", fv.Type().Key(), fv.MapIndex(mKey).String())
+			}
 			err = setData(keyParts[1:], value, fv.Addr().Interface(), eq, path2...)
 			if err != nil {
 				return err
 			}
 		} else {
 			kpath := strings.Join(path2, ".")
-			// println("setting", strings.Join(path2, "."), fv.Type().String(), value)
+			println("setting", strings.Join(path2, "."), fv.Type().String(), value)
 			switch fv.Type().String() {
 			case "bool":
 				fv.SetBool(GetBool(value))
@@ -133,6 +176,7 @@ func setData(keyParts []string, value string, data interface{}, eq func(string) 
 				}
 				fv.SetInt(i)
 			case "string":
+				println("setting value", value)
 				fv.SetString(value)
 			case "[]string":
 				err = json.Unmarshal([]byte(value), fv.Addr().Interface())
@@ -147,7 +191,14 @@ func setData(keyParts []string, value string, data interface{}, eq func(string) 
 		}
 	}
 	if !matched {
+		println("field not matched")
 		// currently ignored
 	}
+	if haveMap {
+		println(rvMap.Type().String())
+		pp.Println(rv.Interface())
+		rvMap.SetMapIndex(rvMapIndex, rv)
+	}
+
 	return nil
 }
