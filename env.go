@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/yudai/pp"
 )
 
 type EnvMap map[string]string
@@ -71,8 +70,9 @@ func SetInStruct(
 	eq func(string) string, // compare function (last part of path with the struct field name)
 	data interface{}, // target to set the data in
 ) (err error) {
+	dataV := reflect.ValueOf(data)
 	for key, value := range setMap {
-		err = setData(strings.Split(key, sep), value, data, eq)
+		err = setData(strings.Split(key, sep), value, dataV, eq)
 		if err != nil {
 			switch err {
 			case errNoStruct:
@@ -95,28 +95,32 @@ var (
 	errNotAddressable = errors.New("Not addressable")
 )
 
-func setData(keyParts []string, value string, data interface{}, eq func(string) string, path ...string) (err error) {
-	// pp.Println(keyParts)
+func setData(keyParts []string, value string, rv reflect.Value, eq func(string) string, path ...string) (err error) {
 
-	rv := reflect.ValueOf(data).Elem()
+	rv = reflect.Indirect(rv)
 
-	// println("setData", rv.Type().String())
-	var rvMap, rvMapIndex reflect.Value
-	var haveMap bool
+	// sp := strings.Repeat("  ", len(path))
+	// Pln("%s setData %v...%v %s %t", sp, path, keyParts, rv.Kind(), rv.CanAddr())
+
+	var mapKey, mapElem, origMap reflect.Value
+
 	switch rv.Kind() {
 	case reflect.Map:
-		rvMap = rv
-		rvMapIndex = reflect.ValueOf(keyParts[0])
-		rv = rv.MapIndex(rvMapIndex)
-		haveMap = true
-		if !rvMap.CanAddr() {
-			return errNotAddressable
+		// Create map if needed
+		if rv.IsNil() {
+			rv.Set(reflect.MakeMap(rv.Type()))
 		}
-		if !rv.CanAddr() {
-			rv2 := rv
-			println("unable to addr struct!", rv2.Addr().CanAddr())
+
+		// Create map element if needed
+		mapKey = reflect.ValueOf(keyParts[0])
+		mapElem = rv.MapIndex(mapKey)
+		if !mapElem.IsValid() {
+			elemType := rv.Type().Elem()
+			mapElem = reflect.New(elemType).Elem()
 		}
 		keyParts = keyParts[1:]
+		origMap = rv
+		rv = mapElem
 	case reflect.Struct:
 		if !rv.CanAddr() {
 			return errNotAddressable
@@ -142,30 +146,13 @@ func setData(keyParts []string, value string, data interface{}, eq func(string) 
 
 		if len(keyParts) > 1 {
 			// more parts left, dive
-			println(">", strings.Join(keyParts[1:], "."), fv.Type().Kind().String(), value)
-			if fv.Type().Kind() == reflect.Map {
-				if len(keyParts[1:]) < 2 || fv.Type().Key().Kind() != reflect.String {
-					return errNoMapString
-				}
-				// set keyParts[1:2] inside the map
-				println(fv.IsNil())
-				if fv.IsNil() {
-					fv.Set(reflect.MakeMap(fv.Type()))
-				}
-				mKey := reflect.ValueOf(keyParts[1:2][0])
-				fv2 := fv.MapIndex(mKey)
-				if !fv2.IsValid() {
-					fv.SetMapIndex(mKey, reflect.Zero(fv.Type().Elem()))
-				}
-				Pln("we have a map! %s v %v", fv.Type().Key(), fv.MapIndex(mKey).String())
-			}
-			err = setData(keyParts[1:], value, fv.Addr().Interface(), eq, path2...)
+			err = setData(keyParts[1:], value, fv, eq, path2...)
 			if err != nil {
 				return err
 			}
 		} else {
 			kpath := strings.Join(path2, ".")
-			println("setting", strings.Join(path2, "."), fv.Type().String(), value)
+			// Pln(sp+" %v %s [%s]: %s", path, field.Name, fv.Type().String(), value)
 			switch fv.Type().String() {
 			case "bool":
 				fv.SetBool(GetBool(value))
@@ -176,14 +163,12 @@ func setData(keyParts []string, value string, data interface{}, eq func(string) 
 				}
 				fv.SetInt(i)
 			case "string":
-				println("setting value", value)
 				fv.SetString(value)
 			case "[]string":
 				err = json.Unmarshal([]byte(value), fv.Addr().Interface())
 				if err != nil {
 					return errors.Wrapf(err, "Unable to unmarshal %q into key %q", value, kpath)
 				}
-
 			default:
 				return errors.Errorf("Unsupported type %q for key %q", t, kpath)
 			}
@@ -194,11 +179,8 @@ func setData(keyParts []string, value string, data interface{}, eq func(string) 
 		println("field not matched")
 		// currently ignored
 	}
-	if haveMap {
-		println(rvMap.Type().String())
-		pp.Println(rv.Interface())
-		rvMap.SetMapIndex(rvMapIndex, rv)
+	if mapElem.IsValid() {
+		origMap.SetMapIndex(mapKey, rv)
 	}
-
 	return nil
 }

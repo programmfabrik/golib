@@ -2,10 +2,12 @@ package golib
 
 import (
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/yudai/pp"
 )
 
 func TestGetEnv(t *testing.T) {
@@ -44,24 +46,54 @@ func TestMapValues2(t *testing.T) {
 	}
 }
 
-func TestSetInStruct(t *testing.T) {
-	type sMap struct {
-		Name  string
-		Value int
-	}
-	type cfgTest struct {
-		Int    int
-		Bool   bool
-		Simple string
-		Inner  struct {
-			Test    string
-			TestArr []string
-			Nested  struct {
-				DSN string
-			}
-			MapMe map[string]*sMap
+type cfgTest struct {
+	Int    int
+	Bool   bool
+	Simple string
+	Inner  struct {
+		Test    string
+		TestArr []string
+		Nested  struct {
+			DSN string
+		}
+		MapMe map[string]struct {
+			Name  string
+			Value int
 		}
 	}
+}
+
+func WEGTestSetMapValue(t *testing.T) {
+	a := "henk"
+
+	rvA := reflect.Indirect(reflect.ValueOf(&a))
+	println("rvA", rvA.CanAddr(), rvA.String())
+	rvA.SetString("horst")
+	println(a)
+
+	c := cfgTest{}
+
+	rv1 := reflect.ValueOf(&c).Elem()
+	println("rv1", rv1.CanAddr(), rv1.String())
+	rv2 := rv1.FieldByName("Inner")
+	println("rv2", rv2.CanAddr(), rv2.Type().String())
+	rv3 := rv2.FieldByName("MapMe")
+	println("rv3", rv3.CanAddr(), rv3.String(), rv2.Type().String())
+	rv3.Set(reflect.MakeMap(rv3.Type()))
+
+	var mapElem reflect.Value
+	elemType := rv3.Type().Elem()
+	if !mapElem.IsValid() {
+		mapElem = reflect.New(elemType).Elem()
+	} else {
+		mapElem.Set(reflect.Zero(elemType))
+	}
+	rv3.SetMapIndex(reflect.ValueOf("henk"), mapElem)
+
+	pp.Println(c)
+}
+
+func TestSetInStruct(t *testing.T) {
 
 	ct := cfgTest{}
 	err := SetInStruct(map[string]string{
@@ -72,7 +104,12 @@ func TestSetInStruct(t *testing.T) {
 		"INNER_TESTARR":            `["test1", "test2"]`,
 		"INNER_NESTED_DSN":         "henk-db",
 		"INNER_MAPME_torsten_NAME": "mein name is torsten",
-	}, "_", func(s string) string { return strings.ToUpper(s) }, &ct)
+	}, "_",
+		func(s string) string {
+			return strings.ToUpper(s)
+		},
+		&ct)
+
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -85,7 +122,7 @@ func TestSetInStruct(t *testing.T) {
 	if !assert.Equal(t, "henk-db", ct.Inner.Nested.DSN) {
 		return
 	}
-	if !assert.Equal(t, "mein name ist torsten", ct.Inner.MapMe["torsten"].Name) {
+	if !assert.Equal(t, "mein name is torsten", ct.Inner.MapMe["torsten"].Name) {
 		return
 	}
 	if !assert.Equal(t, 4, ct.Int) {
