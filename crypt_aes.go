@@ -53,28 +53,28 @@ func EncryptAES(text, secretKey string) (cryptedText string, err error) {
 func DecryptAES(cryptedText, secretKey string) (text string, err error) {
 	c, err := aes.NewCipher([]byte(secretKey))
 	if err != nil {
-		return "", fmt.Errorf("Creating cipher failed: %w", err)
+		return cryptedText, fmt.Errorf("Creating cipher failed: %w", err)
 	}
 
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
-		return "", fmt.Errorf("Creating GCM failed: %w", err)
+		return cryptedText, fmt.Errorf("Creating GCM failed: %w", err)
 	}
 
 	nonceSize := gcm.NonceSize()
 	if len(cryptedText) < nonceSize {
-		return "", fmt.Errorf("Nonce wrong length: %w", err)
+		return cryptedText, fmt.Errorf("Nonce wrong length: %w", err)
 	}
 
 	cryptedBytes, err := base64.StdEncoding.DecodeString(cryptedText)
 	if err != nil {
-		return "", fmt.Errorf("base64 decode error: %w", err)
+		return cryptedText, fmt.Errorf("base64 decode error: %w", err)
 	}
 
 	nonce, cryptedBytes := cryptedBytes[:nonceSize], cryptedBytes[nonceSize:]
 	plaintext, err := gcm.Open(nil, nonce, cryptedBytes, nil)
 	if err != nil {
-		return "", fmt.Errorf("Unable to decrypt: %w", err)
+		return cryptedText, fmt.Errorf("Unable to decrypt: %w", err)
 	}
 	return string(plaintext), nil
 }
