@@ -2,6 +2,7 @@ package golib
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
 	"regexp"
@@ -97,10 +98,18 @@ var (
 
 func setData(keyParts []string, value string, rv reflect.Value, eq func(string) string, path ...string) (err error) {
 
-	rv = reflect.Indirect(rv)
+	// dereference pointers until we have
+	// an element. Initialize nil pointers
+	// along the way.
+	for rv.Kind() == reflect.Pointer {
+		if rv.IsNil() {
+			rv.Set(reflect.New(rv.Type().Elem()))
+		}
+		rv = rv.Elem()
+	}
 
 	// sp := strings.Repeat("  ", len(path))
-	// Pln("%s setData %v...%v %s %t", sp, path, keyParts, rv.Kind(), rv.CanAddr())
+	// Pln("%s setData %v...%v value: %q kind: %q canAddr: %t", sp, path, keyParts, value, rv.Kind(), rv.CanAddr())
 
 	var mapKey, mapElem, origMap reflect.Value
 
@@ -117,19 +126,25 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 		if !mapElem.IsValid() {
 			elemType := rv.Type().Elem()
 			mapElem = reflect.New(elemType).Elem()
+			if elemType.Kind() == reflect.Pointer {
+				mapElem.Set(reflect.New(mapElem.Type().Elem()))
+			}
+			// Pln("eme type %s %v %t", elemType, elemType.Kind() == reflect.Pointer, mapElem.IsValid())
 		}
+		path = append(path, keyParts[0])
 		keyParts = keyParts[1:]
 		origMap = rv
-		rv = mapElem
+		rv = reflect.Indirect(mapElem)
+		// sp = strings.Repeat("  ", len(path))
+		// Pln("%s setData %v...%v value: %q kind: %q canAddr: %t", sp, path, keyParts, value, rv.Kind(), rv.CanAddr())
 	case reflect.Struct:
 		if !rv.CanAddr() {
-			return errNotAddressable
+			return fmt.Errorf(`%v needs to be addressable`, path)
 		}
-	default:
-		return errNoStruct
 	}
+	// Pln("accessing map key %s %s", mapKey, rv.Kind())
 	if rv.Kind() != reflect.Struct {
-		return errNoStruct
+		return fmt.Errorf(`%v needs to be struct but is "%T"`, path, value)
 	}
 	t := rv.Type()
 	matched := false
@@ -179,8 +194,14 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 		println("field not matched")
 		// currently ignored
 	}
+	// If we access an element of a map, set the value, unless
+	// it is a pointer.
 	if mapElem.IsValid() {
-		origMap.SetMapIndex(mapKey, rv)
+		if mapElem.Kind() == reflect.Pointer {
+			origMap.SetMapIndex(mapKey, rv.Addr())
+		} else {
+			origMap.SetMapIndex(mapKey, rv)
+		}
 	}
 	return nil
 }

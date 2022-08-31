@@ -60,6 +60,9 @@ type cfgTest struct {
 			Name  string
 			Value int
 		}
+		MapMePtr map[string]*struct {
+			Yo string
+		}
 	}
 }
 
@@ -104,6 +107,7 @@ func TestSetInStruct(t *testing.T) {
 		"INNER_TESTARR":            `["test1", "test2"]`,
 		"INNER_NESTED_DSN":         "henk-db",
 		"INNER_MAPME_torsten_NAME": "mein name is torsten",
+		"INNER_MAPMEPTR_henk_YO":   "torsten",
 	}, "_",
 		func(s string) string {
 			return strings.ToUpper(s)
@@ -123,6 +127,10 @@ func TestSetInStruct(t *testing.T) {
 		return
 	}
 	if !assert.Equal(t, "mein name is torsten", ct.Inner.MapMe["torsten"].Name) {
+		return
+	}
+	println(JsonString(ct.Inner))
+	if !assert.Equal(t, "torsten", ct.Inner.MapMePtr["henk"].Yo) {
 		return
 	}
 	if !assert.Equal(t, 4, ct.Int) {

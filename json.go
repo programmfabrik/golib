@@ -107,11 +107,11 @@ func JsonUnmarshalObject(source interface{}, target interface{}) error {
 	return json.Unmarshal(data, &target)
 }
 
-// JsonUnmarshalQuery unmarshals a query string into target
-// Every query parameter needs to be unmarshalled separately
-// Otherwise they'll be considered json strings and unable to unmarshal in top struct
-// In the case of raw strings (no object/array/number etc), it will not unmarshall
-// For this one, we just directly assign the raw value
+// JsonUnmarshalQuery unmarshals a query string into target Every query
+// parameter needs to be unmarshalled separately Otherwise they'll be considered
+// json strings and unable to unmarshal in top struct In the case of raw strings
+// (no object/array/number etc), it will not unmarshall For this one, we just
+// directly assign the raw value
 func JsonUnmarshalQuery(qv url.Values, target interface{}) error {
 	m := map[string]interface{}{}
 	for k, vs := range qv {
