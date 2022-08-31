@@ -10,7 +10,7 @@ func TestCryptAES(t *testing.T) {
 	text := "henk"
 	secret := "12345678901234567890123456789012"
 
-	cText, err := CryptAES(text, secret)
+	cText, err := EncryptAES(text, secret)
 	if !assert.NoError(t, err) {
 		return
 	}

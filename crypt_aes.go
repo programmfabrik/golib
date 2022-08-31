@@ -9,9 +9,9 @@ import (
 	"io"
 )
 
-// CryptAES encrypts text to cryptedText using the secretKey. The secretKey must
+// EncryptAES encrypts text to cryptedText using the secretKey. The secretKey must
 // be exactly 32 bytes long. cryptedText is base64 encoded.
-func CryptAES(text, secretKey string) (cryptedText string, err error) {
+func EncryptAES(text, secretKey string) (cryptedText string, err error) {
 
 	// generate a new aes cipher using our 32 byte long key
 	c, err := aes.NewCipher([]byte(secretKey))
