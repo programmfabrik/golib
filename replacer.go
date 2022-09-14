@@ -44,14 +44,21 @@ func (rep *Replacer) Replace(s string) string {
 	return s
 }
 
-func (rep Replacer) Dump() (s []string) {
+func (rep Replacer) Dump() {
+	for _, s := range rep.Debug() {
+		println(s)
+	}
+}
+
+func (rep Replacer) Debug() (ss []string) {
 	keys := []string{}
 	for key := range rep.repl {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-	for _, key := range keys {
-		s = append(s, key+"="+rep.repl[key])
+	ss = make([]string, len(keys))
+	for idx, key := range keys {
+		ss[idx] = key + "=" + rep.repl[key]
 	}
-	return s
+	return ss
 }
