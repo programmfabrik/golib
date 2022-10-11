@@ -108,6 +108,10 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 		rv = rv.Elem()
 	}
 
+	if !rv.CanAddr() {
+		return fmt.Errorf(`%v needs to be addressable`, path)
+	}
+
 	// sp := strings.Repeat("  ", len(path))
 	// Pln("%s setData %v...%v value: %q kind: %q canAddr: %t", sp, path, keyParts, value, rv.Kind(), rv.CanAddr())
 
@@ -118,6 +122,10 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 		// Create map if needed
 		if rv.IsNil() {
 			rv.Set(reflect.MakeMap(rv.Type()))
+		}
+
+		if len(keyParts) == 1 {
+			return fmt.Errorf(`map %v needs a value`, path)
 		}
 
 		// Create map element if needed
@@ -137,10 +145,6 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 		rv = reflect.Indirect(mapElem)
 		// sp = strings.Repeat("  ", len(path))
 		// Pln("%s setData %v...%v value: %q kind: %q canAddr: %t", sp, path, keyParts, value, rv.Kind(), rv.CanAddr())
-	case reflect.Struct:
-		if !rv.CanAddr() {
-			return fmt.Errorf(`%v needs to be addressable`, path)
-		}
 	}
 	// Pln("accessing map key %s %s", mapKey, rv.Kind())
 	if rv.Kind() != reflect.Struct {
@@ -166,6 +170,9 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 				return err
 			}
 		} else {
+			if !fv.CanAddr() {
+				return fmt.Errorf(`%v needs to be addressable`, path2)
+			}
 			kpath := strings.Join(path2, ".")
 			// Pln(sp+" %v %s [%s]: %s", path, field.Name, fv.Type().String(), value)
 			switch fv.Type().String() {
@@ -191,7 +198,7 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 		}
 	}
 	if !matched {
-		println("field not matched")
+		// println("SetInStruct: Field not matched", strings.Join(keyParts, "."))
 		// currently ignored
 	}
 	// If we access an element of a map, set the value, unless

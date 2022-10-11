@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/yudai/pp"
 )
 
 func TestGetEnv(t *testing.T) {
@@ -93,7 +92,7 @@ func WEGTestSetMapValue(t *testing.T) {
 	}
 	rv3.SetMapIndex(reflect.ValueOf("henk"), mapElem)
 
-	pp.Println(c)
+	// pp.Println(c)
 }
 
 func TestSetInStruct(t *testing.T) {
@@ -129,11 +128,64 @@ func TestSetInStruct(t *testing.T) {
 	if !assert.Equal(t, "mein name is torsten", ct.Inner.MapMe["torsten"].Name) {
 		return
 	}
-	println(JsonString(ct.Inner))
+	// println(JsonString(ct.Inner))
 	if !assert.Equal(t, "torsten", ct.Inner.MapMePtr["henk"].Yo) {
 		return
 	}
 	if !assert.Equal(t, 4, ct.Int) {
 		return
 	}
+}
+
+func TestSetInStruct2(t *testing.T) {
+
+	type Object struct {
+		Hello string `yaml:"hello"`
+	}
+
+	type Map map[string]string
+
+	type Map2 map[string]struct {
+		Hello  string `yaml:"hello"`
+		Object Object `yaml:"object"`
+		Map    Map    `yaml:"map"`
+		Map2   *Map2  `yaml:"map2"`
+	}
+
+	type MyConfig struct {
+		Hello   string  `yaml:"hello"`
+		Object  Object  `yaml:"object"`
+		Object2 *Object `yaml:"object2"`
+		Map     Map     `yaml:"map"`
+		Map2    Map2    `yaml:"map2"`
+	}
+
+	type MyConfigV2 struct {
+		Fylr MyConfig
+	}
+
+	cfg := MyConfigV2{}
+
+	for k, v := range map[string]string{
+		"FYLR_HELLO":                  "world",
+		"FYLR_OBJECT_HELLO":           "world",
+		"FYLR_OBJECT2_HELLO":          "world",
+		"FYLR_OBJECT2_OBJECT_HELLO":   "world",
+		"FYLR_OBJECT2_MAP_key":        "world",
+		"FYLR_OBJECT2_MAP_key2":       "world",
+		"FYLR_MAP_key":                "value",
+		"FYLR_MAP_key2":               "value2",
+		"FYLR_MAP2_HELLO":             "world",
+		"FYLR_MAP2_OBJECT_HELLO":      "world",
+		"FYLR_MAP2_MAP_key":           "world",
+		"FYLR_MAP2_MAP_key2":          "world",
+		"FYLR_MAP2_MAP2_HELLO":        "world",
+		"FYLR_MAP2_MAP2_OBJECT_HELLO": "world",
+		"FYLR_MAP2_MAP2_MAP_key":      "world",
+		"FYLR_MAP2_MAP2_MAP_key2":     "world",
+	} {
+		_ = SetInStruct(map[string]string{k: v}, "_", strings.ToUpper, &cfg)
+		// Test that nothing panics here
+	}
+
 }
