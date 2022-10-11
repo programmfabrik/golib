@@ -1,6 +1,7 @@
 package golib
 
 import (
+	"encoding/json"
 	"os"
 	"reflect"
 	"strings"
@@ -62,6 +63,8 @@ type cfgTest struct {
 		MapMePtr map[string]*struct {
 			Yo string
 		}
+		MapStr map[string]string
+		MapInt map[string]int
 	}
 }
 
@@ -98,7 +101,21 @@ func WEGTestSetMapValue(t *testing.T) {
 func TestSetInStruct(t *testing.T) {
 
 	ct := cfgTest{}
-	err := SetInStruct(map[string]string{
+	err := json.Unmarshal([]byte(`{
+		"Inner": {
+			"MapMe": {
+				"horst": {
+					"Name": "schrader",
+					"Value": 3
+				}
+			}
+		}
+	}
+	`), &ct)
+	if !assert.NoError(t, err) {
+		return
+	}
+	err = SetInStruct(map[string]string{
 		"INT":                      "4",
 		"BOOL":                     "true",
 		"SIMPLE":                   "test",
@@ -106,7 +123,10 @@ func TestSetInStruct(t *testing.T) {
 		"INNER_TESTARR":            `["test1", "test2"]`,
 		"INNER_NESTED_DSN":         "henk-db",
 		"INNER_MAPME_torsten_NAME": "mein name is torsten",
+		"INNER_MAPME_horst_NAME":   "horst schrader",
 		"INNER_MAPMEPTR_henk_YO":   "torsten",
+		"INNER_MAPSTR_hugo":        "kalt",
+		"INNER_MAPINT_no1":         "4",
 	}, "_",
 		func(s string) string {
 			return strings.ToUpper(s)
@@ -116,6 +136,7 @@ func TestSetInStruct(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
+
 	if !assert.Equal(t, "test", ct.Simple) {
 		return
 	}
@@ -126,6 +147,15 @@ func TestSetInStruct(t *testing.T) {
 		return
 	}
 	if !assert.Equal(t, "mein name is torsten", ct.Inner.MapMe["torsten"].Name) {
+		return
+	}
+	if !assert.Equal(t, "horst schrader", ct.Inner.MapMe["horst"].Name) {
+		return
+	}
+	if !assert.Equal(t, "kalt", ct.Inner.MapStr["hugo"]) {
+		return
+	}
+	if !assert.Equal(t, 4, ct.Inner.MapInt["no1"]) {
 		return
 	}
 	// println(JsonString(ct.Inner))

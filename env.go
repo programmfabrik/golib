@@ -124,10 +124,6 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 			rv.Set(reflect.MakeMap(rv.Type()))
 		}
 
-		if len(keyParts) == 1 {
-			return fmt.Errorf(`map %v needs a value`, path)
-		}
-
 		// Create map element if needed
 		mapKey = reflect.ValueOf(keyParts[0])
 		mapElem = rv.MapIndex(mapKey)
@@ -138,6 +134,16 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 				mapElem.Set(reflect.New(mapElem.Type().Elem()))
 			}
 			// Pln("eme type %s %v %t", elemType, elemType.Kind() == reflect.Pointer, mapElem.IsValid())
+		} else if !mapElem.CanAddr() {
+			// copy mapElem
+			elemType := rv.Type().Elem()
+			mapElemOld := mapElem
+			mapElem = reflect.New(elemType).Elem()
+			for i := 0; i < mapElem.NumField(); i++ {
+				if mapElem.Field(i).CanSet() {
+					mapElem.Field(i).Set(mapElemOld.Field(i))
+				}
+			}
 		}
 		path = append(path, keyParts[0])
 		keyParts = keyParts[1:]
@@ -147,60 +153,49 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 		// Pln("%s setData %v...%v value: %q kind: %q canAddr: %t", sp, path, keyParts, value, rv.Kind(), rv.CanAddr())
 	}
 	// Pln("accessing map key %s %s", mapKey, rv.Kind())
-	if rv.Kind() != reflect.Struct {
-		return fmt.Errorf(`%v needs to be struct but is "%T"`, path, value)
-	}
-	t := rv.Type()
-	matched := false
-	for i := 0; i < rv.NumField(); i++ {
-		field := t.Field(i)
-		if eq(field.Name) != eq(keyParts[0]) || !field.IsExported() {
-			continue
+	if rv.Kind() == reflect.Struct {
+		t := rv.Type()
+		matched := false
+		if len(keyParts) == 0 {
+			return fmt.Errorf(`%v is missing a struct member`, path)
 		}
-		matched = true
-		fv := rv.Field(i)
-		path2 := make([]string, len(path))
-		copy(path2, path)
-		path2 = append(path2, field.Name)
+		for i := 0; i < rv.NumField(); i++ {
+			field := t.Field(i)
+			if eq(field.Name) != eq(keyParts[0]) || !field.IsExported() {
+				continue
+			}
+			matched = true
+			fv := rv.Field(i)
+			path2 := make([]string, len(path))
+			copy(path2, path)
+			path2 = append(path2, field.Name)
 
-		if len(keyParts) > 1 {
-			// more parts left, dive
-			err = setData(keyParts[1:], value, fv, eq, path2...)
-			if err != nil {
-				return err
-			}
-		} else {
-			if !fv.CanAddr() {
-				return fmt.Errorf(`%v needs to be addressable`, path2)
-			}
-			kpath := strings.Join(path2, ".")
-			// Pln(sp+" %v %s [%s]: %s", path, field.Name, fv.Type().String(), value)
-			switch fv.Type().String() {
-			case "bool":
-				fv.SetBool(GetBool(value))
-			case "int", "int64", "int32":
-				i, err := strconv.ParseInt(value, 10, 64)
+			if len(keyParts) > 1 {
+				// more parts left, dive
+				err = setData(keyParts[1:], value, fv, eq, path2...)
 				if err != nil {
-					return errors.Wrapf(err, "Unable to unmarshal %q into key %q", value, kpath)
+					return err
 				}
-				fv.SetInt(i)
-			case "string":
-				fv.SetString(value)
-			case "[]string":
-				err = json.Unmarshal([]byte(value), fv.Addr().Interface())
+			} else {
+				// Pln(sp+" %v %s [%s]: %s", path, field.Name, fv.Type().String(), value)
+				err = setValue(fv, value)
 				if err != nil {
-					return errors.Wrapf(err, "Unable to unmarshal %q into key %q", value, kpath)
+					return errors.Wrapf(err, "Path: %q", strings.Join(path2, "."))
 				}
-			default:
-				return errors.Errorf("Unsupported type %q for key %q", t, kpath)
+				// thats the leaf of the branch -> set the value
 			}
-			// thats the leaf of the branch -> set the value
+		}
+		if !matched {
+			// println("SetInStruct: Field not matched", strings.Join(keyParts, "."))
+			// currently ignored
+		}
+	} else {
+		err = setValue(rv, value)
+		if err != nil {
+			return errors.Wrapf(err, "Path: %q", strings.Join(path, "."))
 		}
 	}
-	if !matched {
-		// println("SetInStruct: Field not matched", strings.Join(keyParts, "."))
-		// currently ignored
-	}
+
 	// If we access an element of a map, set the value, unless
 	// it is a pointer.
 	if mapElem.IsValid() {
@@ -209,6 +204,29 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 		} else {
 			origMap.SetMapIndex(mapKey, rv)
 		}
+	}
+	return nil
+}
+
+func setValue(rv reflect.Value, value string) (err error) {
+	switch rv.Type().String() {
+	case "bool":
+		rv.SetBool(GetBool(value))
+	case "int", "int64", "int32":
+		i, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return errors.Wrapf(err, "Unable to unmarshal %q", value)
+		}
+		rv.SetInt(i)
+	case "string":
+		rv.SetString(value)
+	case "[]string":
+		err = json.Unmarshal([]byte(value), rv.Addr().Interface())
+		if err != nil {
+			return fmt.Errorf("Unable to unmarshal %q", value)
+		}
+	default:
+		return fmt.Errorf("Unsupported type %q", rv.Type())
 	}
 	return nil
 }
