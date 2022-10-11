@@ -108,6 +108,11 @@ func TestSetInStruct(t *testing.T) {
 					"Name": "schrader",
 					"Value": 3
 				}
+			},
+			"MapMePtr": {
+				"yo1": {
+					"Yo": "uhu"
+				}
 			}
 		}
 	}
@@ -127,12 +132,12 @@ func TestSetInStruct(t *testing.T) {
 		"INNER_MAPMEPTR_henk_YO":   "torsten",
 		"INNER_MAPSTR_hugo":        "kalt",
 		"INNER_MAPINT_no1":         "4",
+		"INNER_MAPMEPTR_yo1_YO":    "baum",
 	}, "_",
 		func(s string) string {
 			return strings.ToUpper(s)
 		},
 		&ct)
-
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -160,6 +165,9 @@ func TestSetInStruct(t *testing.T) {
 	}
 	// println(JsonString(ct.Inner))
 	if !assert.Equal(t, "torsten", ct.Inner.MapMePtr["henk"].Yo) {
+		return
+	}
+	if !assert.Equal(t, "baum", ct.Inner.MapMePtr["yo1"].Yo) {
 		return
 	}
 	if !assert.Equal(t, 4, ct.Int) {

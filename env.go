@@ -137,11 +137,15 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 		} else if !mapElem.CanAddr() {
 			// copy mapElem
 			elemType := rv.Type().Elem()
-			mapElemOld := mapElem
+			mapElemOld := reflect.Indirect(mapElem)
+
 			mapElem = reflect.New(elemType).Elem()
-			for i := 0; i < mapElem.NumField(); i++ {
-				if mapElem.Field(i).CanSet() {
-					mapElem.Field(i).Set(mapElemOld.Field(i))
+			if elemType.Kind() == reflect.Pointer {
+				mapElem.Set(reflect.New(mapElem.Type().Elem()))
+			}
+			for i := 0; i < reflect.Indirect(mapElem).NumField(); i++ {
+				if reflect.Indirect(mapElem).Field(i).CanSet() {
+					reflect.Indirect(mapElem).Field(i).Set(mapElemOld.Field(i))
 				}
 			}
 		}
