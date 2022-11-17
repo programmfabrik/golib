@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -38,6 +39,7 @@ func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 	// printing some of their contents.
 	for _, f := range r.File {
 
+		// Join turns "/" into "\" on Windows
 		fn := filepath.Join(targetDir, f.Name)
 
 		if f.FileInfo().IsDir() {
@@ -80,25 +82,27 @@ func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 	return nil
 }
 
-// PackZipFile packs all files from sourceDir as ZIP to writeTo.
+// PackZipFile packs all files from sourceDir as ZIP to writeTo. We pack
+// all filenames using /. On Windows, the \ in paths is replaced by \
 func PackZipFile(sourceDir, topLevelDir string, writeTo io.Writer) (err error) {
+	sep := string(os.PathSeparator)
 	archive := zip.NewWriter(writeTo)
-	err = filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(sourceDir, func(p string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.IsDir() {
 			return nil
 		}
-		fn := strings.TrimPrefix(path, sourceDir+"/")
+		fn := strings.ReplaceAll(strings.TrimPrefix(p, sourceDir+sep), sep, "/")
 		if topLevelDir != "" {
-			fn = topLevelDir + "/" + fn
+			fn = path.Join(topLevelDir, fn) // Use "/" join here, independent from the OS as it is standard in ZIP
 		}
 		fw, err := archive.Create(fn)
 		if err != nil {
 			return err
 		}
-		file, err := os.Open(path)
+		file, err := os.Open(p)
 		if err != nil {
 			return err
 		}
