@@ -1,6 +1,7 @@
 package golib
 
 import (
+	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
@@ -90,12 +91,16 @@ func JsonString(v interface{}) string {
 	if v == nil {
 		return ""
 	}
-	bytes, err := json.MarshalIndent(v, "", "    ")
+	buf := bytes.Buffer{}
+	enc := json.NewEncoder(&buf)
+	enc.SetIndent("", "    ")
+	enc.SetEscapeHTML(false)
+	err := enc.Encode(v)
 	if err != nil {
 		// fall back to the built in
 		return fmt.Sprintf("%#v [Json Error:%s]", v, err)
 	}
-	return string(bytes)
+	return buf.String()
 }
 
 // JsonUnmarshalObject marshals the source into json and unmarshals it into target
