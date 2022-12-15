@@ -1,6 +1,7 @@
 package golib
 
 import (
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -42,6 +43,18 @@ func (rep *Replacer) Replace(s string) string {
 		s = string(emptyKey.ReplaceAllFunc([]byte(s), func(m []byte) []byte { return nil }))
 	}
 	return s
+}
+
+// IntOrReplace replaces v if it is a string and parses it as int64. If v
+// already is an int, an int64 is returned. If the string (after replacements)
+// cannot be parsed as int64, an error is returned.
+func (rep *Replacer) IntOrReplace(v any) (int64, error) {
+	rs, ok := v.(string)
+	if !ok {
+		// v isn't a string, most likely it's int
+		rs = fmt.Sprintf("%v", v)
+	}
+	return strconv.ParseInt(rep.Replace(rs), 10, 64)
 }
 
 func (rep Replacer) Dump() {
