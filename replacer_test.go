@@ -41,9 +41,12 @@ func TestIntOrReplace(t *testing.T) {
 		return
 	}
 
-	// Unsupported type error
-	_, err = r.IntOrReplace(123.56)
-	if !assert.Error(t, err) {
+	// Default path (0,nil)
+	i64, err = r.IntOrReplace(nil)
+	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.Equal(t, int64(0), i64) {
 		return
 	}
 

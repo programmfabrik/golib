@@ -1,7 +1,6 @@
 package golib
 
 import (
-	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -70,11 +69,15 @@ func (rep *Replacer) IntOrReplace(v any) (int64, error) {
 		return vt, nil
 	case uint64:
 		return int64(vt), nil
+	case float32:
+		return int64(vt), nil
+	case float64:
+		return int64(vt), nil
 	case string:
 		// v isn't a string, most likely it's int
 		return strconv.ParseInt(rep.Replace(vt), 10, 64)
-	default:
-		return 0, fmt.Errorf("IntOrReplace: unsupported type %T", v)
+	default: // also <nil>
+		return 0, nil
 	}
 }
 
