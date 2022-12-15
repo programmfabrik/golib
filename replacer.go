@@ -49,12 +49,33 @@ func (rep *Replacer) Replace(s string) string {
 // already is an int, an int64 is returned. If the string (after replacements)
 // cannot be parsed as int64, an error is returned.
 func (rep *Replacer) IntOrReplace(v any) (int64, error) {
-	rs, ok := v.(string)
-	if !ok {
+	switch vt := v.(type) {
+	case int:
+		return int64(vt), nil
+	case uint:
+		return int64(vt), nil
+	case int8:
+		return int64(vt), nil
+	case uint8:
+		return int64(vt), nil
+	case int16:
+		return int64(vt), nil
+	case uint16:
+		return int64(vt), nil
+	case int32:
+		return int64(vt), nil
+	case uint32:
+		return int64(vt), nil
+	case int64:
+		return vt, nil
+	case uint64:
+		return int64(vt), nil
+	case string:
 		// v isn't a string, most likely it's int
-		rs = fmt.Sprintf("%v", v)
+		return strconv.ParseInt(rep.Replace(vt), 10, 64)
+	default:
+		return 0, fmt.Errorf("IntOrReplace: unsupported type %T", v)
 	}
-	return strconv.ParseInt(rep.Replace(rs), 10, 64)
 }
 
 func (rep Replacer) Dump() {

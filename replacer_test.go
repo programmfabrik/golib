@@ -19,3 +19,32 @@ func TestReplacer1(t *testing.T) {
 		return
 	}
 }
+
+func TestIntOrReplace(t *testing.T) {
+	r := Replacer{}
+
+	r.Set("%min%", "400")
+
+	i64, err := r.IntOrReplace("%min%")
+	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.Equal(t, int64(400), i64) {
+		return
+	}
+
+	i64, err = r.IntOrReplace(int32(-1234))
+	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.Equal(t, int64(-1234), i64) {
+		return
+	}
+
+	// Unsupported type error
+	_, err = r.IntOrReplace(123.56)
+	if !assert.Error(t, err) {
+		return
+	}
+
+}
