@@ -87,6 +87,20 @@ func JsonPretty(b []byte) string {
 	return string(b2)
 }
 
+func JsonBytes(v interface{}) ([]byte, error) {
+	buf := bytes.Buffer{}
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	err := enc.Encode(v)
+	if err != nil {
+		// fall back to the built in
+		return nil, err
+	}
+	bs := buf.Bytes()
+	// remove the \n which Encode adds at the end
+	return bs[0 : len(bs)-1], nil
+}
+
 func JsonString(v interface{}) string {
 	return JsonStringIndent(v, "", "    ")
 }
@@ -98,10 +112,9 @@ func JsonStringIndent(v interface{}, prefix, indent string) string {
 	buf := bytes.Buffer{}
 	enc := json.NewEncoder(&buf)
 	enc.SetIndent(prefix, indent)
-	enc.SetEscapeHTML(true)
+	enc.SetEscapeHTML(false)
 	err := enc.Encode(v)
 	if err != nil {
-		// fall back to the built in
 		return fmt.Sprintf("%#v [Json Error:%s]", v, err)
 	}
 	bs := buf.Bytes()
