@@ -87,18 +87,22 @@ func JsonPretty(b []byte) string {
 	return string(b2)
 }
 
-func JsonBytes(v interface{}) ([]byte, error) {
+func JsonBytesIndent(v interface{}, prefix, indent string) ([]byte, error) {
 	buf := bytes.Buffer{}
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
+	enc.SetIndent(prefix, indent)
 	err := enc.Encode(v)
 	if err != nil {
-		// fall back to the built in
 		return nil, err
 	}
 	bs := buf.Bytes()
 	// remove the \n which Encode adds at the end
 	return bs[0 : len(bs)-1], nil
+}
+
+func JsonBytes(v interface{}) ([]byte, error) {
+	return JsonBytesIndent(v, "", "")
 }
 
 func JsonString(v interface{}) string {
@@ -109,17 +113,11 @@ func JsonStringIndent(v interface{}, prefix, indent string) string {
 	if v == nil {
 		return ""
 	}
-	buf := bytes.Buffer{}
-	enc := json.NewEncoder(&buf)
-	enc.SetIndent(prefix, indent)
-	enc.SetEscapeHTML(false)
-	err := enc.Encode(v)
+	bs, err := JsonBytesIndent(v, prefix, indent)
 	if err != nil {
 		return fmt.Sprintf("%#v [Json Error:%s]", v, err)
 	}
-	bs := buf.Bytes()
-	// remove the \n which Encode adds at the end
-	return string(bs[0 : len(bs)-1])
+	return string(bs)
 }
 
 // JsonUnmarshalObject marshals the source into json and unmarshals it into target
