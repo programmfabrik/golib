@@ -17,7 +17,7 @@ import (
 func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 	zipFile, err := ioutil.TempFile(targetDir, "")
 	if err != nil {
-		return errors.Wrap(err, "Error installing plugin. Writing ZIP failed")
+		return errors.Wrap(err, "Unpack ZIP")
 	}
 
 	defer func() {
@@ -27,12 +27,12 @@ func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 
 	_, err = io.Copy(zipFile, zipData)
 	if err != nil {
-		return errors.Wrap(err, "Error installing plugin. Copying ZIP failed")
+		return errors.Wrap(err, "Copy ZIP")
 	}
 
 	r, err := zip.OpenReader(zipFile.Name())
 	if err != nil {
-		return errors.Wrap(err, "Opening ZIP failed")
+		return errors.Wrap(err, "Read ZIP")
 	}
 
 	// Iterate through the files in the archive,
@@ -46,7 +46,7 @@ func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 			// Make Folder
 			err = os.MkdirAll(fn, 0755)
 			if err != nil {
-				return errors.Wrapf(err, "Unpacking ZIP failed: %q", f.Name)
+				return errors.Wrapf(err, "Mkdir for ZIP %q", f.Name)
 			}
 			continue
 		}
@@ -54,26 +54,26 @@ func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 		// Make directory for file
 		err = os.MkdirAll(filepath.Dir(fn), 0755)
 		if err != nil {
-			return errors.Wrapf(err, "Unpacking ZIP failed: %q", f.Name)
+			return errors.Wrapf(err, "Mkdir for ZIP %q", f.Name)
 		}
 
 		// Open file in ZIP
 		rc, err := f.Open()
 		if err != nil {
-			return errors.Wrapf(err, "Unpacking ZIP failed: %q", f.Name)
+			return errors.Wrapf(err, "Open for ZIP %q", f.Name)
 		}
 
 		// Open file on disk
 		of, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
-			return errors.Wrapf(err, "Unpacking ZIP failed: %q", f.Name)
+			return errors.Wrapf(err, "Open on disk for ZIP %q", f.Name)
 		}
 
 		// Copy data from ZIP to disk
 		_, err = io.Copy(of, rc)
 		if err != nil {
 			of.Close()
-			return errors.Wrapf(err, "Copy to file failed: %q", fn)
+			return errors.Wrapf(err, "Copy for ZIP %q", fn)
 		}
 		of.Close()
 		rc.Close()
