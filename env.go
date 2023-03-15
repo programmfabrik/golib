@@ -70,24 +70,25 @@ func SetInStruct(
 	sep string, // key path separator (e.g. "." or "_")
 	eq func(string) string, // compare function (last part of path with the struct field name)
 	data interface{}, // target to set the data in
-) (err error) {
+) (valuesSet []string, err error) {
+	valuesSet = []string{}
 	dataV := reflect.ValueOf(data)
 	for key, value := range setMap {
-		err = setData(strings.Split(key, sep), value, dataV, eq)
+		err = setData(strings.Split(key, sep), value, dataV, eq, &valuesSet)
 		if err != nil {
 			switch err {
 			case errNoStruct:
-				return errors.Errorf(`%q needs to be struct but is "%T"`, key, value)
+				return valuesSet, errors.Errorf(`%q needs to be struct but is "%T"`, key, value)
 			case errNoMapString:
-				return errors.Errorf(`%q needs to be a map[string]`, key)
+				return valuesSet, errors.Errorf(`%q needs to be a map[string]`, key)
 			case errNotAddressable:
-				return errors.Errorf(`%q needs to be addressable`, key)
+				return valuesSet, errors.Errorf(`%q needs to be addressable`, key)
 			default:
-				return errors.Wrap(err, "SetInStruct")
+				return valuesSet, errors.Wrap(err, "SetInStruct")
 			}
 		}
 	}
-	return nil
+	return valuesSet, nil
 }
 
 var (
@@ -96,7 +97,7 @@ var (
 	errNotAddressable = errors.New("Not addressable")
 )
 
-func setData(keyParts []string, value string, rv reflect.Value, eq func(string) string, path ...string) (err error) {
+func setData(keyParts []string, value string, rv reflect.Value, eq func(string) string, valuesSet *[]string, path ...string) (err error) {
 
 	// dereference pointers until we have
 	// an element. Initialize nil pointers
@@ -176,7 +177,7 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 
 			if len(keyParts) > 1 {
 				// more parts left, dive
-				err = setData(keyParts[1:], value, fv, eq, path2...)
+				err = setData(keyParts[1:], value, fv, eq, valuesSet, path2...)
 				if err != nil {
 					return err
 				}
@@ -186,6 +187,7 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 				if err != nil {
 					return errors.Wrapf(err, "Path: %q", strings.Join(path2, "."))
 				}
+				*valuesSet = append(*valuesSet, strings.Join(append(path, field.Name), "."))
 				// thats the leaf of the branch -> set the value
 			}
 		}
@@ -198,6 +200,7 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 		if err != nil {
 			return errors.Wrapf(err, "Path: %q", strings.Join(path, "."))
 		}
+		*valuesSet = append(*valuesSet, strings.Join(path, "."))
 	}
 
 	// If we access an element of a map, set the value, unless

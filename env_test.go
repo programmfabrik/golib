@@ -120,7 +120,7 @@ func TestSetInStruct(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
-	err = SetInStruct(map[string]string{
+	valuesSet, err := SetInStruct(map[string]string{
 		"INT":                      "4",
 		"BOOL":                     "true",
 		"SIMPLE":                   "test",
@@ -139,6 +139,22 @@ func TestSetInStruct(t *testing.T) {
 		},
 		&ct)
 	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.ElementsMatch(t, []string{
+		"Inner.MapStr.hugo",
+		"Inner.MapInt.no1",
+		"Inner.Test",
+		"Inner.TestArr",
+		"Inner.MapMe.horst.Name",
+		"Inner.MapMePtr.henk.Yo",
+		"Inner.MapMe.torsten.Name",
+		"Inner.MapMePtr.yo1.Yo",
+		"Int",
+		"Bool",
+		"Simple",
+		"Inner.Nested.DSN",
+	}, valuesSet) {
 		return
 	}
 
@@ -222,7 +238,7 @@ func TestSetInStruct2(t *testing.T) {
 		"FYLR_MAP2_MAP2_MAP_key":      "world",
 		"FYLR_MAP2_MAP2_MAP_key2":     "world",
 	} {
-		_ = SetInStruct(map[string]string{k: v}, "_", strings.ToUpper, &cfg)
+		_, _ = SetInStruct(map[string]string{k: v}, "_", strings.ToUpper, &cfg)
 		// Test that nothing panics here
 	}
 
