@@ -83,10 +83,10 @@ func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 }
 
 // PackZipFile packs all files from sourceDir as ZIP to writeTo. We pack
-// all filenames using /. On Windows, the \ in paths is replaced by \
+// all filenames using /. On Windows, the \ in paths is replaced by /
 func PackZipFile(sourceDir, topLevelDir string, writeTo io.Writer) (err error) {
 	sep := string(os.PathSeparator)
-	archive := zip.NewWriter(writeTo)
+	zipW := zip.NewWriter(writeTo)
 	err = filepath.Walk(sourceDir, func(p string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -98,7 +98,12 @@ func PackZipFile(sourceDir, topLevelDir string, writeTo io.Writer) (err error) {
 		if topLevelDir != "" {
 			fn = path.Join(topLevelDir, fn) // Use "/" join here, independent from the OS as it is standard in ZIP
 		}
-		fw, err := archive.Create(fn)
+		fh, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+		fh.Name = fn
+		fw, err := zipW.CreateHeader(fh)
 		if err != nil {
 			return err
 		}
@@ -110,7 +115,7 @@ func PackZipFile(sourceDir, topLevelDir string, writeTo io.Writer) (err error) {
 		file.Close()
 		return err
 	})
-	archive.Close()
+	zipW.Close()
 	if err != nil {
 		return errors.Wrap(err, "Error packing ZIP")
 	}
