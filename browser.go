@@ -20,7 +20,9 @@ func ContentDisposition(disposition string, filename string) (key, value string)
 		disposition = "inline"
 	}
 	if filename != "" {
-		return "Content-Disposition", disposition + "; filename*=UTF-8''" + url.QueryEscape(filename)
+		// We use path escape here, so that " " is not changed into "+"
+		return "Content-Disposition", disposition + "; filename=\"" + strings.ReplaceAll(filename, `"`, `_`) +
+			"\"; filename*=UTF-8''" + url.PathEscape(filename)
 	} else {
 		return "Content-Disposition", disposition
 	}
