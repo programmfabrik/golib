@@ -44,7 +44,7 @@ func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 
 		if f.FileInfo().IsDir() {
 			// Make Folder
-			err = os.MkdirAll(fn, 0755)
+			err = os.MkdirAll(fn, f.Mode())
 			if err != nil {
 				return errors.Wrapf(err, "Mkdir for ZIP %q", f.Name)
 			}
@@ -64,7 +64,7 @@ func UnpackZipFile(targetDir string, zipData io.Reader) (err error) {
 		}
 
 		// Open file on disk
-		of, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE, 0644)
+		of, err := os.OpenFile(fn, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 		if err != nil {
 			return errors.Wrapf(err, "Open on disk for ZIP %q", f.Name)
 		}
