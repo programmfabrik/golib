@@ -25,7 +25,11 @@ func IntMin(x, y int) int {
 }
 
 func Pln(s string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, s+"\n", args...)
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, s)
+	} else {
+		fmt.Fprintf(os.Stderr, s+"\n", args...)
+	}
 }
 
 type StringMap map[string]interface{}

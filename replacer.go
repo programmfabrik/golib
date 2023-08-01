@@ -83,7 +83,7 @@ func (rep *Replacer) IntOrReplace(v any) (int64, error) {
 
 func (rep Replacer) Dump() {
 	for _, s := range rep.Debug() {
-		println(s)
+		Pln(s)
 	}
 }
 
@@ -96,6 +96,10 @@ func (rep Replacer) Debug() (ss []string) {
 	ss = make([]string, len(keys))
 	for idx, key := range keys {
 		ss[idx] = key + "=" + rep.repl[key]
+	}
+
+	for _, ek := range rep.EmptyKeys {
+		ss = append(ss, "empty regexp: "+ek.String())
 	}
 	return ss
 }

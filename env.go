@@ -14,7 +14,7 @@ import (
 
 type EnvMap map[string]string
 
-// GetEnv returns the os environement. Skips
+// GetEnv returns the os environment. Skips
 // values not matching the prefix regexp re.
 func GetEnv(re string) EnvMap {
 	return MapValues(os.Environ(), re)
