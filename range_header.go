@@ -81,7 +81,7 @@ func ParseRange(s string, size int64) ([]HttpRange, error) {
 				if i >= size {
 					i = size - 1
 				}
-				r.Length = i - r.Start
+				r.Length = i - r.Start + 1
 			}
 		}
 		ranges = append(ranges, r)
