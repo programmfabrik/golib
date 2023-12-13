@@ -174,3 +174,23 @@ func StringByteChunks(s string, byteChunkSize int) (chunks []string) {
 	chunks = append(chunks, string(chars))
 	return chunks
 }
+
+// ToValidUTF8 checks and converts a string to valid UTF-8, replacing invalid characters.
+// It iterates over the string, and for each rune that is identified as invalid (RuneError),
+// it replaces it with the specified 'replacement' rune.
+func ToValidUTF8(s string, replacement rune) string {
+	if utf8.ValidString(s) {
+		return s // The string is already valid UTF-8.
+	}
+
+	// Build a new string with invalid runes replaced.
+	var builder strings.Builder
+	for _, r := range s {
+		if r == utf8.RuneError {
+			builder.WriteRune(replacement)
+		} else {
+			builder.WriteRune(r)
+		}
+	}
+	return builder.String()
+}
