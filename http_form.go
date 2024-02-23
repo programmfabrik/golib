@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ParseForm works like http.Request.ParseForm but addionally
+// ParseForm works like http.Request.ParseForm but additionally
 // adds values received in json format to request.Form
 func ParseForm(req *http.Request) error {
 

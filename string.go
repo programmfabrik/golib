@@ -125,19 +125,19 @@ func ReplaceEndless(s, old, new string) string {
 	}
 }
 
-// StrSliceToInterfaceSlice converts a slice of string to slice of interface
-func StrSliceToInterfaceSlice(s []string) []interface{} {
-	in := make([]interface{}, len(s))
-	for idx, s0 := range s {
+// ToAnySlice converts a slice of []T to []any
+func ToAnySlice[T any](list []T) []any {
+	in := make([]any, len(list))
+	for idx, s0 := range list {
 		in[idx] = s0
 	}
 	return in
 }
 
-// InterfaceSliceToStrSlice converts a slice of string to slice of interface
-func InterfaceSliceToStrSlice(i []interface{}) []string {
-	sn := make([]string, len(i))
-	for idx, i0 := range i {
+// AnyToStrSlice converts a slice of string to slice of interface
+func AnyToStrSlice[T any](list []T) []string {
+	sn := make([]string, len(list))
+	for idx, i0 := range list {
 		sn[idx] = fmt.Sprintf("%v", i0)
 	}
 	return sn
