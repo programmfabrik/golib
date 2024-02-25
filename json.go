@@ -124,9 +124,18 @@ func JsonStringIndent(v interface{}, prefix, indent string) string {
 func JsonUnmarshalObject(source interface{}, target interface{}) error {
 	data, err := json.Marshal(source)
 	if err != nil {
+
 		return err
 	}
-	return json.Unmarshal(data, &target)
+
+	err = json.Unmarshal(data, &target)
+	if err != nil && strings.Contains(err.Error(), "cannot unmarshal number") {
+		// try again using a json.Number decoder
+		dec := json.NewDecoder(bytes.NewReader(data))
+		dec.UseNumber()
+		return dec.Decode(&target)
+	}
+	return err // can be <nil>
 }
 
 // JsonUnmarshalQuery unmarshals a query string into target Every query
