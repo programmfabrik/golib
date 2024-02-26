@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -121,21 +122,33 @@ func JsonStringIndent(v interface{}, prefix, indent string) string {
 }
 
 // JsonUnmarshalObject marshals the source into json and unmarshals it into target
-func JsonUnmarshalObject(source interface{}, target interface{}) error {
+func JsonUnmarshalObject(source any, target any) error {
 	data, err := json.Marshal(source)
 	if err != nil {
 
 		return err
 	}
+	return JsonUnmarshalWithNumber(data, &target)
+}
 
-	err = json.Unmarshal(data, &target)
-	if err != nil && strings.Contains(err.Error(), "cannot unmarshal number") {
-		// try again using a json.Number decoder
-		dec := json.NewDecoder(bytes.NewReader(data))
-		dec.UseNumber()
-		return dec.Decode(&target)
+// JsonUnmarshalWithNumber unmarshals data into value. If the json
+// decoding returns an error with "cannot unmarshal number ... into float64"
+// we try again to unmarshal using "UseNumber"
+var numberMatcher = regexp.MustCompile("cannot unmarshal number .*? into Go value of type float64")
+
+func JsonUnmarshalWithNumber(data []byte, value any) (err error) {
+	err = json.Unmarshal(data, &value)
+	if err != nil {
+		if numberMatcher.MatchString(err.Error()) {
+			// try again using a json.Number decoder
+			dec := json.NewDecoder(bytes.NewReader(data))
+			dec.UseNumber()
+			return dec.Decode(&value)
+		} else {
+			return err
+		}
 	}
-	return err // can be <nil>
+	return nil
 }
 
 // JsonUnmarshalQuery unmarshals a query string into target Every query
