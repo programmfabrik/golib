@@ -3,6 +3,7 @@ package golib
 import (
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -51,4 +52,22 @@ func FilepathAbs(startDir, path string) (pathAbs string) {
 		return path
 	}
 	return filepath.Join(startDir, path)
+}
+
+// AbsPathExecutable prefixes p with the path to the currently running
+// executable if p is not absolute.
+func AbsPathExecutable(p string) (string, error) {
+	if filepath.IsAbs(p) {
+		return p, nil
+	}
+	// prefix the dir of the executable
+	execFile, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("Unable to get path of executable: %w", err)
+	}
+	p, err = filepath.Abs(filepath.Join(filepath.Dir(execFile), p))
+	if err != nil {
+		return "", fmt.Errorf("Unable to get path of executable: %w", err)
+	}
+	return p, nil
 }
