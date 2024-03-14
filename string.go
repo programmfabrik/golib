@@ -1,7 +1,9 @@
 package golib
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -193,4 +195,27 @@ func ToValidUTF8(s string, replacement rune) string {
 		}
 	}
 	return builder.String()
+}
+
+// DebugValues takes a slice of T and returns and ordered list each item
+// rendered in a comma separated list. If the list is longer than length bytes,
+// the rest of the slice is omitted and the output ends in ... With length <= 0,
+// the whole slice is rendered
+func DebugValues[T cmp.Ordered](list []T, length int) string {
+	slices.Sort(list)
+	sb := strings.Builder{}
+	sb.WriteRune('[')
+	for idx, item := range list {
+		s := fmt.Sprintf("%v", item)
+		if idx > 0 {
+			sb.WriteRune(',')
+		}
+		if length > 0 && len(s)+sb.Len() > length {
+			sb.WriteString("...")
+			break
+		}
+		sb.WriteString(s)
+	}
+	sb.WriteString(fmt.Sprintf("] %d", len(list)))
+	return sb.String()
 }
