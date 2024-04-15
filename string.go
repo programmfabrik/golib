@@ -9,6 +9,8 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/text/cases"
+	"golang.org/x/text/collate"
+	"golang.org/x/text/language"
 )
 
 // PushOntoStringArray adds str(s) to arr if missing
@@ -145,18 +147,28 @@ func AnyToStrSlice[T any](list []T) []string {
 	return sn
 }
 
+// FoldStr uses ICU folding on s
 func FoldStr(s string) string {
 	c := cases.Fold()
 	return c.String(s)
 }
 
+// SortStr returns a sortable string for s in language lang. To
+// sort, the collate.IgnoreWidth, collate.IgnoreCase are set.
+func SortStr(lang language.Tag, s string) string {
+	cl := collate.New(lang, collate.IgnoreWidth, collate.IgnoreCase)
+	buf := new(collate.Buffer)
+	return string(cl.KeyFromString(buf, s))
+}
+
 // Split string s into byte chunks of a max size of chunkSize Each string
 // returned has a maximum length of byteChunkSize The split is UTF-8 safe.
+// If byteChunkSize is 0, no chunking is performed.
 func StringByteChunks(s string, byteChunkSize int) (chunks []string) {
 	if len(s) == 0 {
 		return nil
 	}
-	if byteChunkSize >= len(s) {
+	if byteChunkSize == 0 || byteChunkSize >= len(s) {
 		return []string{s}
 	}
 	chunks = []string{}

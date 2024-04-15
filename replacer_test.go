@@ -20,6 +20,24 @@ func TestReplacer1(t *testing.T) {
 	}
 }
 
+func TestReplacer2(t *testing.T) {
+	r := Replacer{
+		repl: map[string]string{
+			"%_global_object_id%": "1@dadfbcce-a55d-40ec-baaf-afbe37941304",
+			"%_system_object_id%": "1",
+			"%object._id%":        "1",
+			"%object._version%":   "1",
+			"%object.ref%":        "obj1",
+		},
+		EmptyKeys: []*regexp.Regexp{
+			regexp.MustCompile(`%object\.titel%`),
+		},
+	}
+	if !assert.Equal(t, "obj1 ", r.Replace("%object.ref% %object.titel%")) {
+		return
+	}
+}
+
 func TestIntOrReplace(t *testing.T) {
 	r := Replacer{}
 
