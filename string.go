@@ -2,6 +2,7 @@ package golib
 
 import (
 	"cmp"
+	"encoding/hex"
 	"fmt"
 	"slices"
 	"strconv"
@@ -153,12 +154,12 @@ func FoldStr(s string) string {
 	return c.String(s)
 }
 
-// SortStr returns a sortable string for s in language lang. To
+// SortStr returns a sortable hex string for s in language lang. To
 // sort, the collate.IgnoreWidth, collate.IgnoreCase are set.
 func SortStr(lang language.Tag, s string) string {
 	cl := collate.New(lang, collate.IgnoreWidth, collate.IgnoreCase)
 	buf := new(collate.Buffer)
-	return string(cl.KeyFromString(buf, s))
+	return hex.EncodeToString(cl.KeyFromString(buf, s))
 }
 
 // Split string s into byte chunks of a max size of chunkSize Each string
