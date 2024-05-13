@@ -1,9 +1,8 @@
 package golib
 
 import (
+	"fmt"
 	"runtime/debug"
-
-	"github.com/pkg/errors"
 )
 
 // Recover can be used in defer to execute "f" on recover
@@ -12,8 +11,8 @@ func Recover(f func(err error)) {
 	if r == nil {
 		return
 	}
-	err := errors.Errorf("Panic: %v", r)
-	println(err.Error())
+	err := fmt.Errorf("Panic: %v", r)
+	Pln(err.Error())
 	debug.PrintStack()
 	if f != nil {
 		func() {
