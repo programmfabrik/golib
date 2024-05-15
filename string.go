@@ -156,8 +156,9 @@ func FoldStr(s string) string {
 
 // SortStr returns a sortable hex string for s in language lang. To
 // sort, the collate.IgnoreWidth, collate.IgnoreCase are set.
-func SortStr(lang language.Tag, s string) string {
-	cl := collate.New(lang, collate.IgnoreWidth, collate.IgnoreCase)
+func SortStr(lang language.Tag, s string, opts ...collate.Option) string {
+	opts = append(opts, collate.IgnoreWidth, collate.IgnoreCase)
+	cl := collate.New(lang, opts...)
 	buf := new(collate.Buffer)
 	return hex.EncodeToString(cl.KeyFromString(buf, s))
 }
