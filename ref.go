@@ -1,10 +1,9 @@
 package golib
 
 import (
+	"fmt"
 	"math"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 // StringRef returns a refernce to the given string
@@ -137,5 +136,5 @@ func Int64OrString(data interface{}, accepted ...string) (*int64, string, error)
 			return i, "", nil
 		}
 	}
-	return nil, "", errors.Errorf("Int64OrString: %v Accepted: %v", data, accepted)
+	return nil, "", fmt.Errorf("Int64OrString: %v Accepted: %v", data, accepted)
 }

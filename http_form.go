@@ -2,10 +2,9 @@ package golib
 
 import (
 	"encoding/json"
+	"fmt"
 	"mime"
 	"net/http"
-
-	"github.com/pkg/errors"
 )
 
 // ParseForm works like http.Request.ParseForm but additionally
@@ -35,13 +34,13 @@ func ParseForm(req *http.Request) error {
 	case "multipart/form-data":
 		err = req.ParseMultipartForm(4096)
 		if err != nil {
-			return errors.Wrap(err, "Unable to parse form")
+			return fmt.Errorf("Unable to parse form: %w", err)
 		}
 	case "application/json":
 		jsonForm := map[string]interface{}{}
 		err = json.NewDecoder(req.Body).Decode(&jsonForm)
 		if err != nil {
-			return errors.Wrap(err, "ParseForm failed")
+			return fmt.Errorf("ParseForm failed: %w", err)
 		}
 		for k, v := range jsonForm {
 			switch v1 := v.(type) {

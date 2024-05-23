@@ -6,7 +6,6 @@ import (
 	"io"
 	"regexp"
 
-	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 )
 
@@ -74,7 +73,7 @@ func (loca Localization) Load(reader io.Reader) error {
 			break
 		}
 		if err != nil {
-			return errors.Wrap(err, "Localization.Load: failed")
+			return fmt.Errorf("Localization.Load: failed: %w", err)
 		}
 
 		row = row + 1
@@ -90,7 +89,7 @@ func (loca Localization) Load(reader io.Reader) error {
 				}
 			}
 			if keyCol == -1 {
-				return errors.New(`Localization.Load: Column "key" found in CSV data.`)
+				return fmt.Errorf(`Localization.Load: Column "key" found in CSV data.`)
 			}
 			continue
 		}
