@@ -120,6 +120,28 @@ func JsonStringIndent(v interface{}, prefix, indent string) string {
 	return string(bs)
 }
 
+// JsonUnmarshal marshals the source into json and unmarshals it into target.
+// If there is an error, it checks for known json parser errors and
+// if there is a match, a JsonUnmarshalError with parsed information is returned.
+func JsonUnmarshal(source []byte, target any) (err error) {
+	err = json.Unmarshal(source, target)
+	if err != nil {
+		regex := regexp.MustCompile(`.*?cannot unmarshal ([^\s]*?) into .*? type ([a-zA-Z_\.\[\]]*)`)
+		matches := regex.FindStringSubmatch(err.Error())
+		if len(matches) == 3 {
+			return JsonUnmarshalError().
+				Value(string(source)).
+				SourceType(matches[1]).
+				TargetType(matches[2]).
+				Detail(err.Error())
+		}
+
+		// no regex match, just return the original error
+		return err
+	}
+	return nil
+}
+
 // JsonUnmarshalObject marshals the source into json and unmarshals it into target
 func JsonUnmarshalObject(source any, target any) error {
 	data, err := json.Marshal(source)

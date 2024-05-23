@@ -2,6 +2,8 @@ package golib
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/url"
 	"testing"
 
@@ -39,5 +41,140 @@ func TestJsonUnmarshalQuery(t *testing.T) {
 	err := JsonUnmarshalQuery(q.Query(), &u)
 	if !assert.NoError(t, err) {
 		return
+	}
+}
+
+type JsonValues struct {
+	Text      string      `json:"text"`
+	Integer   int         `json:"integer"`
+	Decimal   float64     `json:"decimal"`
+	Bool      bool        `json:"bool"`
+	Array     []any       `json:"array"`
+	SubObject *JsonValues `json:"obj"`
+}
+
+func TestJsonUnmarshal(t *testing.T) {
+	var target JsonValues
+	err := JsonUnmarshal([]byte(`
+		{
+			"text": "hello world",
+			"integer": 1234,
+			"decimal": 0.5678,
+			"bool": true,
+			"array": [
+				"three",
+				"array",
+				"elements"
+			],
+			"obj": {
+				"text": "sub object"
+			}
+		}
+	`), &target)
+	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.Equal(t, "hello world", target.Text) {
+		return
+	}
+	if !assert.Equal(t, 1234, target.Integer) {
+		return
+	}
+	if !assert.Equal(t, 0.5678, target.Decimal) {
+		return
+	}
+	if !assert.Equal(t, true, target.Bool) {
+		return
+	}
+	if !assert.Equal(t, "three", target.Array[0]) {
+		return
+	}
+	if !assert.Equal(t, "array", target.Array[1]) {
+		return
+	}
+	if !assert.Equal(t, "elements", target.Array[2]) {
+		return
+	}
+	if !assert.Equal(t, "sub object", target.SubObject.Text) {
+		return
+	}
+}
+
+func TestJsonUnmarshalError(t *testing.T) {
+	var (
+		target          JsonValues
+		unmarshalErr    ErrJsonUnmarshal
+		unmarshalErrPtr *ErrJsonUnmarshal
+	)
+
+	type testCase struct {
+		rawJson            string
+		expectedSourceType string
+		expectedTargetType string
+	}
+	for idx, c := range []testCase{
+		{
+			rawJson:            `{"text": false}`,
+			expectedSourceType: "bool",
+			expectedTargetType: "string",
+		},
+		{
+			rawJson:            `{"text": 123}`,
+			expectedSourceType: "number",
+			expectedTargetType: "string",
+		},
+		{
+			rawJson:            `{"text": 123.456}`,
+			expectedSourceType: "number",
+			expectedTargetType: "string",
+		},
+		{
+			rawJson:            `{"integer": "invalid"}`,
+			expectedSourceType: "string",
+			expectedTargetType: "int",
+		},
+		{
+			rawJson:            `{"decimal": "invalid"}`,
+			expectedSourceType: "string",
+			expectedTargetType: "float",
+		},
+		{
+			rawJson:            `{"bool": 123}`,
+			expectedSourceType: "number",
+			expectedTargetType: "bool",
+		},
+		{
+			rawJson:            `{"array": false}`,
+			expectedSourceType: "bool",
+			expectedTargetType: "[]interface",
+		},
+	} {
+		err := JsonUnmarshal([]byte(c.rawJson), &target)
+		if !assert.Error(t, err) {
+			return
+		}
+
+		switch {
+		case errors.As(err, &unmarshalErr):
+		case errors.As(err, &unmarshalErrPtr):
+			unmarshalErr = *unmarshalErrPtr
+		default:
+			t.Errorf("expect JsonUnmarshalError")
+			return
+		}
+		if !assert.Equal(t,
+			c.expectedSourceType,
+			unmarshalErr.params.SourceType,
+			fmt.Sprintf("test case %d: %v: check SourceType", idx, c.rawJson),
+		) {
+			return
+		}
+		if !assert.Equal(t,
+			c.expectedTargetType,
+			unmarshalErr.params.TargetType,
+			fmt.Sprintf("test case %d: %v: check TargetType", idx, c.rawJson),
+		) {
+			return
+		}
 	}
 }
