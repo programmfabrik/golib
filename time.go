@@ -3,8 +3,6 @@ package golib
 import (
 	"fmt"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 var APITimeFormats = []string{
@@ -23,7 +21,7 @@ func ParseTime(s string) (time.Time, error) {
 			return t, nil
 		}
 	}
-	return time.Time{}, errors.Errorf("Unable to ParseTime %q to any known format.", s)
+	return time.Time{}, fmt.Errorf("Unable to ParseTime %q to any known format.", s)
 }
 
 func FormatDuration(d time.Duration) string {

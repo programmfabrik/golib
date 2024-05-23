@@ -1,15 +1,14 @@
 package golib
 
 import (
+	"fmt"
 	"math"
-
-	"github.com/pkg/errors"
 )
 
 func Float64ToInt64(f float64) (i int64, err error) {
 	iP, fP := math.Modf(f)
 	if fP != 0 {
-		return 0, errors.New("Float has fractional part")
+		return 0, fmt.Errorf("Float has fractional part")
 	}
 	return int64(iP), nil
 }

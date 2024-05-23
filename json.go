@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"regexp"
@@ -19,7 +18,7 @@ func JsonWriteFile(fn string, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(fn, j, 0644)
+	err = os.WriteFile(fn, j, 0644)
 	return err
 }
 

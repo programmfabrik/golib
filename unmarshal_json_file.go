@@ -2,20 +2,19 @@ package golib
 
 import (
 	"encoding/json"
-	"io/ioutil"
-
-	"github.com/pkg/errors"
+	"fmt"
+	"os"
 )
 
 func UnmarshalJsonFile(path string, out interface{}) error {
-	bin, err := ioutil.ReadFile(path)
+	bin, err := os.ReadFile(path)
 	if err != nil {
-		return errors.Wrap(err, "Could not read file from path")
+		return fmt.Errorf("Could not read file from path: %w", err)
 	}
 
 	err = json.Unmarshal(bin, out)
 	if err != nil {
-		return errors.Wrap(err, "Could not unmarshal file")
+		return fmt.Errorf("Could not unmarshal file: %w", err)
 	}
 
 	return nil

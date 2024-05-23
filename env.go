@@ -8,8 +8,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 type EnvMap map[string]string
@@ -78,13 +76,13 @@ func SetInStruct(
 		if err != nil {
 			switch err {
 			case errNoStruct:
-				return valuesSet, errors.Errorf(`%q needs to be struct but is "%T"`, key, value)
+				return valuesSet, fmt.Errorf(`%q needs to be struct but is "%T"`, key, value)
 			case errNoMapString:
-				return valuesSet, errors.Errorf(`%q needs to be a map[string]`, key)
+				return valuesSet, fmt.Errorf(`%q needs to be a map[string]`, key)
 			case errNotAddressable:
-				return valuesSet, errors.Errorf(`%q needs to be addressable`, key)
+				return valuesSet, fmt.Errorf(`%q needs to be addressable`, key)
 			default:
-				return valuesSet, errors.Wrap(err, "SetInStruct")
+				return valuesSet, fmt.Errorf("SetInStruct: %w", err)
 			}
 		}
 	}
@@ -92,9 +90,9 @@ func SetInStruct(
 }
 
 var (
-	errNoStruct       = errors.New("No struct")
-	errNoMapString    = errors.New("No map string")
-	errNotAddressable = errors.New("Not addressable")
+	errNoStruct       = fmt.Errorf("No struct")
+	errNoMapString    = fmt.Errorf("No map string")
+	errNotAddressable = fmt.Errorf("Not addressable")
 )
 
 func setData(keyParts []string, value string, rv reflect.Value, eq func(string) string, valuesSet *[]string, path ...string) (err error) {
@@ -185,7 +183,7 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 				// Pln(sp+" %v %s [%s]: %s", path, field.Name, fv.Type().String(), value)
 				err = setValue(fv, value)
 				if err != nil {
-					return errors.Wrapf(err, "Path: %q", strings.Join(path2, "."))
+					return fmt.Errorf("Path: %q: %w", strings.Join(path2, "."), err)
 				}
 				*valuesSet = append(*valuesSet, strings.Join(append(path, field.Name), "."))
 				// thats the leaf of the branch -> set the value
@@ -198,7 +196,7 @@ func setData(keyParts []string, value string, rv reflect.Value, eq func(string) 
 	} else {
 		err = setValue(rv, value)
 		if err != nil {
-			return errors.Wrapf(err, "Path: %q", strings.Join(path, "."))
+			return fmt.Errorf("Path: %q: %w", strings.Join(path, "."), err)
 		}
 		*valuesSet = append(*valuesSet, strings.Join(path, "."))
 	}
@@ -222,7 +220,7 @@ func setValue(rv reflect.Value, value string) (err error) {
 	case "int", "int64", "int32":
 		i, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
-			return errors.Wrapf(err, "Unable to unmarshal %q", value)
+			return fmt.Errorf("Unable to unmarshal %q: %w", value, err)
 		}
 		rv.SetInt(i)
 	case "string":
