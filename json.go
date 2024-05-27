@@ -123,16 +123,29 @@ func JsonStringIndent(v interface{}, prefix, indent string) string {
 // JsonUnmarshal marshals the source into json and unmarshals it into target.
 // If there is an error, it checks for known json parser errors and
 // if there is a match, a JsonUnmarshalError with parsed information is returned.
+// The error messages are formatted by https://pkg.go.dev/encoding/json#Unmarshal
+// * "json: cannot unmarshal <value> into Go value of type <type>"
+// * "json: cannot unmarshal <value> into Go struct field <target property name> of type <type>"
 func JsonUnmarshal(source []byte, target any) (err error) {
 	err = json.Unmarshal(source, target)
 	if err != nil {
-		regex := regexp.MustCompile(`.*?cannot unmarshal ([^\s]*?) into .*? type ([a-zA-Z_\.\[\]]*)`)
+		regex := regexp.MustCompile(`json: cannot unmarshal ([^\s]+) into Go value of type (.+)$`)
 		matches := regex.FindStringSubmatch(err.Error())
 		if len(matches) == 3 {
 			return JsonUnmarshalError().
+				OriginalError(err).
 				SourceType(matches[1]).
-				TargetType(matches[2]).
-				Detail(err.Error())
+				TargetType(matches[2])
+		}
+
+		regex = regexp.MustCompile(`json: cannot unmarshal ([^\s]+) into Go struct field ([^\s]+?) of type (.+)$`)
+		matches = regex.FindStringSubmatch(err.Error())
+		if len(matches) == 4 {
+			return JsonUnmarshalError().
+				OriginalError(err).
+				SourceType(matches[1]).
+				TargetPropertyName(matches[2]).
+				TargetType(matches[3])
 		}
 
 		// no regex match, just return the original error

@@ -61,45 +61,53 @@ func TestJsonUnmarshalError(t *testing.T) {
 	)
 
 	type testCase struct {
-		rawJson            string
-		expectedSourceType string
-		expectedTargetType string
+		rawJson                    string
+		expectedSourceType         string
+		expectedTargetType         string
+		expectedTargetPropertyName string
 	}
 	for idx, c := range []testCase{
 		{
-			rawJson:            `{"text": false}`,
-			expectedSourceType: "bool",
-			expectedTargetType: "string",
+			rawJson:                    `{"text": false}`,
+			expectedSourceType:         "bool",
+			expectedTargetType:         "string",
+			expectedTargetPropertyName: "JsonValues.text",
 		},
 		{
-			rawJson:            `{"text": 123}`,
-			expectedSourceType: "number",
-			expectedTargetType: "string",
+			rawJson:                    `{"text": 123}`,
+			expectedSourceType:         "number",
+			expectedTargetType:         "string",
+			expectedTargetPropertyName: "JsonValues.text",
 		},
 		{
-			rawJson:            `{"text": 123.456}`,
-			expectedSourceType: "number",
-			expectedTargetType: "string",
+			rawJson:                    `{"text": 123.456}`,
+			expectedSourceType:         "number",
+			expectedTargetType:         "string",
+			expectedTargetPropertyName: "JsonValues.text",
 		},
 		{
-			rawJson:            `{"integer": "invalid"}`,
-			expectedSourceType: "string",
-			expectedTargetType: "int",
+			rawJson:                    `{"integer": "invalid"}`,
+			expectedSourceType:         "string",
+			expectedTargetType:         "int",
+			expectedTargetPropertyName: "JsonValues.integer",
 		},
 		{
-			rawJson:            `{"decimal": "invalid"}`,
-			expectedSourceType: "string",
-			expectedTargetType: "float",
+			rawJson:                    `{"decimal": "invalid"}`,
+			expectedSourceType:         "string",
+			expectedTargetType:         "float64",
+			expectedTargetPropertyName: "JsonValues.decimal",
 		},
 		{
-			rawJson:            `{"bool": 123}`,
-			expectedSourceType: "number",
-			expectedTargetType: "bool",
+			rawJson:                    `{"bool": 123}`,
+			expectedSourceType:         "number",
+			expectedTargetType:         "bool",
+			expectedTargetPropertyName: "JsonValues.bool",
 		},
 		{
-			rawJson:            `{"array": false}`,
-			expectedSourceType: "bool",
-			expectedTargetType: "[]interface",
+			rawJson:                    `{"array": false}`,
+			expectedSourceType:         "bool",
+			expectedTargetType:         "[]interface {}",
+			expectedTargetPropertyName: "JsonValues.array",
 		},
 	} {
 		err := JsonUnmarshal([]byte(c.rawJson), &target)
@@ -119,6 +127,13 @@ func TestJsonUnmarshalError(t *testing.T) {
 			c.expectedSourceType,
 			unmarshalErr.GetSourceType(),
 			fmt.Sprintf("test case %d: %v: check SourceType", idx, c.rawJson),
+		) {
+			return
+		}
+		if !assert.Equal(t,
+			c.expectedTargetPropertyName,
+			unmarshalErr.GetTargetPropertyName(),
+			fmt.Sprintf("test case %d: %v: check TargetPropertyName", idx, c.rawJson),
 		) {
 			return
 		}
