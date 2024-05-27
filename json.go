@@ -130,7 +130,6 @@ func JsonUnmarshal(source []byte, target any) (err error) {
 		matches := regex.FindStringSubmatch(err.Error())
 		if len(matches) == 3 {
 			return JsonUnmarshalError().
-				Value(string(source)).
 				SourceType(matches[1]).
 				TargetType(matches[2]).
 				Detail(err.Error())

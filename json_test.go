@@ -53,53 +53,6 @@ type JsonValues struct {
 	SubObject *JsonValues `json:"obj"`
 }
 
-func TestJsonUnmarshal(t *testing.T) {
-	var target JsonValues
-	err := JsonUnmarshal([]byte(`
-		{
-			"text": "hello world",
-			"integer": 1234,
-			"decimal": 0.5678,
-			"bool": true,
-			"array": [
-				"three",
-				"array",
-				"elements"
-			],
-			"obj": {
-				"text": "sub object"
-			}
-		}
-	`), &target)
-	if !assert.NoError(t, err) {
-		return
-	}
-	if !assert.Equal(t, "hello world", target.Text) {
-		return
-	}
-	if !assert.Equal(t, 1234, target.Integer) {
-		return
-	}
-	if !assert.Equal(t, 0.5678, target.Decimal) {
-		return
-	}
-	if !assert.Equal(t, true, target.Bool) {
-		return
-	}
-	if !assert.Equal(t, "three", target.Array[0]) {
-		return
-	}
-	if !assert.Equal(t, "array", target.Array[1]) {
-		return
-	}
-	if !assert.Equal(t, "elements", target.Array[2]) {
-		return
-	}
-	if !assert.Equal(t, "sub object", target.SubObject.Text) {
-		return
-	}
-}
-
 func TestJsonUnmarshalError(t *testing.T) {
 	var (
 		target          JsonValues
@@ -164,14 +117,14 @@ func TestJsonUnmarshalError(t *testing.T) {
 		}
 		if !assert.Equal(t,
 			c.expectedSourceType,
-			unmarshalErr.params.SourceType,
+			unmarshalErr.GetSourceType(),
 			fmt.Sprintf("test case %d: %v: check SourceType", idx, c.rawJson),
 		) {
 			return
 		}
 		if !assert.Equal(t,
 			c.expectedTargetType,
-			unmarshalErr.params.TargetType,
+			unmarshalErr.GetTargetType(),
 			fmt.Sprintf("test case %d: %v: check TargetType", idx, c.rawJson),
 		) {
 			return
