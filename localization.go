@@ -2,6 +2,7 @@ package golib
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -89,7 +90,7 @@ func (loca Localization) Load(reader io.Reader) error {
 				}
 			}
 			if keyCol == -1 {
-				return fmt.Errorf(`Localization.Load: Column "key" found in CSV data.`)
+				return errors.New(`Localization.Load: Column "key" found in CSV data.`)
 			}
 			continue
 		}

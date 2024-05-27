@@ -2,6 +2,7 @@ package golib
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -90,9 +91,9 @@ func SetInStruct(
 }
 
 var (
-	errNoStruct       = fmt.Errorf("No struct")
-	errNoMapString    = fmt.Errorf("No map string")
-	errNotAddressable = fmt.Errorf("Not addressable")
+	errNoStruct       = errors.New("No struct")
+	errNoMapString    = errors.New("No map string")
+	errNotAddressable = errors.New("Not addressable")
 )
 
 func setData(keyParts []string, value string, rv reflect.Value, eq func(string) string, valuesSet *[]string, path ...string) (err error) {
