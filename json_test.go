@@ -49,65 +49,82 @@ type JsonValues struct {
 	Integer   int         `json:"integer"`
 	Decimal   float64     `json:"decimal"`
 	Bool      bool        `json:"bool"`
-	Array     []any       `json:"array"`
+	Array     []string    `json:"array"`
 	SubObject *JsonValues `json:"obj"`
 }
 
 func TestJsonUnmarshalError(t *testing.T) {
 	var (
-		target          JsonValues
-		unmarshalErr    ErrJsonUnmarshal
-		unmarshalErrPtr *ErrJsonUnmarshal
+		target JsonValues
+		jue    JsonUnmarshalError
 	)
 
 	type testCase struct {
-		rawJson                    string
-		expectedSourceType         string
-		expectedTargetType         string
-		expectedTargetPropertyName string
+		rawJson  string
+		source   string
+		target   string
+		property string
 	}
 	for idx, c := range []testCase{
 		{
-			rawJson:                    `{"text": false}`,
-			expectedSourceType:         "bool",
-			expectedTargetType:         "string",
-			expectedTargetPropertyName: "JsonValues.text",
+			rawJson:  `{"text": false}`,
+			source:   "bool",
+			target:   "string",
+			property: "JsonValues.text",
 		},
 		{
-			rawJson:                    `{"text": 123}`,
-			expectedSourceType:         "number",
-			expectedTargetType:         "string",
-			expectedTargetPropertyName: "JsonValues.text",
+			rawJson:  `{"text": 123}`,
+			source:   "number",
+			target:   "string",
+			property: "JsonValues.text",
 		},
 		{
-			rawJson:                    `{"text": 123.456}`,
-			expectedSourceType:         "number",
-			expectedTargetType:         "string",
-			expectedTargetPropertyName: "JsonValues.text",
+			rawJson:  `{"text": 123.456}`,
+			source:   "number",
+			target:   "string",
+			property: "JsonValues.text",
 		},
 		{
-			rawJson:                    `{"integer": "invalid"}`,
-			expectedSourceType:         "string",
-			expectedTargetType:         "int",
-			expectedTargetPropertyName: "JsonValues.integer",
+			rawJson:  `{"integer": "invalid"}`,
+			source:   "string",
+			target:   "int",
+			property: "JsonValues.integer",
 		},
 		{
-			rawJson:                    `{"decimal": "invalid"}`,
-			expectedSourceType:         "string",
-			expectedTargetType:         "float64",
-			expectedTargetPropertyName: "JsonValues.decimal",
+			rawJson:  `{"decimal": "invalid"}`,
+			source:   "string",
+			target:   "float64",
+			property: "JsonValues.decimal",
 		},
 		{
-			rawJson:                    `{"bool": 123}`,
-			expectedSourceType:         "number",
-			expectedTargetType:         "bool",
-			expectedTargetPropertyName: "JsonValues.bool",
+			rawJson:  `{"bool": 123}`,
+			source:   "number",
+			target:   "bool",
+			property: "JsonValues.bool",
 		},
 		{
-			rawJson:                    `{"array": false}`,
-			expectedSourceType:         "bool",
-			expectedTargetType:         "[]interface {}",
-			expectedTargetPropertyName: "JsonValues.array",
+			rawJson:  `{"array": false}`,
+			source:   "bool",
+			target:   "[]string",
+			property: "JsonValues.array",
+		},
+		{
+			rawJson:  `{"array": [false, false]}`,
+			source:   "bool",
+			target:   "string",
+			property: "JsonValues.array",
+		},
+		{
+			rawJson:  `{"obj": false}`,
+			source:   "bool",
+			target:   "golib.JsonValues",
+			property: "JsonValues.obj",
+		},
+		{
+			rawJson:  `{"obj": {"array": "invalid"}}`,
+			source:   "string",
+			target:   "[]string",
+			property: "JsonValues.obj.array",
 		},
 	} {
 		err := JsonUnmarshal([]byte(c.rawJson), &target)
@@ -116,32 +133,18 @@ func TestJsonUnmarshalError(t *testing.T) {
 		}
 
 		switch {
-		case errors.As(err, &unmarshalErr):
-		case errors.As(err, &unmarshalErrPtr):
-			unmarshalErr = *unmarshalErrPtr
+		case errors.As(err, &jue):
 		default:
 			t.Errorf("expect JsonUnmarshalError")
 			return
 		}
-		if !assert.Equal(t,
-			c.expectedSourceType,
-			unmarshalErr.GetSourceType(),
-			fmt.Sprintf("test case %d: %v: check SourceType", idx, c.rawJson),
-		) {
+		if !assert.Equal(t, c.source, jue.SourceType(), fmt.Sprintf("test case %d: %v: check SourceType()", idx, c.rawJson)) {
 			return
 		}
-		if !assert.Equal(t,
-			c.expectedTargetPropertyName,
-			unmarshalErr.GetTargetPropertyName(),
-			fmt.Sprintf("test case %d: %v: check TargetPropertyName", idx, c.rawJson),
-		) {
+		if !assert.Equal(t, c.property, jue.TargetPropertyName(), fmt.Sprintf("test case %d: %v: check TargetPropertyName()", idx, c.rawJson)) {
 			return
 		}
-		if !assert.Equal(t,
-			c.expectedTargetType,
-			unmarshalErr.GetTargetType(),
-			fmt.Sprintf("test case %d: %v: check TargetType", idx, c.rawJson),
-		) {
+		if !assert.Equal(t, c.target, jue.TargetType(), fmt.Sprintf("test case %d: %v: check TargetType()", idx, c.rawJson)) {
 			return
 		}
 	}

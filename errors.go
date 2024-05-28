@@ -1,57 +1,46 @@
 package golib
 
-type ErrJsonUnmarshal struct {
-	err                error
+import "fmt"
+
+type JsonUnmarshalError struct {
+	err                error // original error for reference
 	sourceType         string
 	targetType         string
 	targetPropertyName string
 }
 
-func JsonUnmarshalError() *ErrJsonUnmarshal {
-	e := &ErrJsonUnmarshal{}
-	return e
+// NewJsonUnmarshalError returns a new JsonUnmarshalError
+// The original error is stored together with the source type and target type
+// If no property name is available it is given as an empty string
+func NewJsonUnmarshalError(err error, sourceType, targetType, targetPropertyName string) JsonUnmarshalError {
+	return JsonUnmarshalError{
+		err:                err,
+		sourceType:         sourceType,
+		targetType:         targetType,
+		targetPropertyName: targetPropertyName,
+	}
 }
 
-func (e ErrJsonUnmarshal) ErrorCode() string {
-	return "JsonUnmarshalError"
+// Error returns the parsed out source & target type, and if possible the name of the property, and the original error message
+func (jue JsonUnmarshalError) Error() string {
+	propertyInfo := ""
+	if jue.targetPropertyName != "" {
+		propertyInfo = fmt.Sprintf("property: %q, ", jue.targetPropertyName)
+	}
+	return fmt.Sprintf("JsonUnmarshal: %ssource type: %q, target type: %q: %q", propertyInfo, jue.sourceType, jue.targetType, jue.err.Error())
 }
 
-func (e ErrJsonUnmarshal) Error() string {
-	return e.err.Error()
+// SourceType returns the type which could not be unmarshaled
+func (jue *JsonUnmarshalError) SourceType() string {
+	return jue.sourceType
 }
 
-func (e *ErrJsonUnmarshal) OriginalError(err error) *ErrJsonUnmarshal {
-	e.err = err
-	return e
+// TargetType returns the type the source type could not be unmarshaled into
+func (jue *JsonUnmarshalError) TargetType() string {
+	return jue.targetType
 }
 
-func (e *ErrJsonUnmarshal) GetOriginalError() error {
-	return e.err
-}
-
-func (e *ErrJsonUnmarshal) SourceType(v string) *ErrJsonUnmarshal {
-	e.sourceType = v
-	return e
-}
-
-func (e *ErrJsonUnmarshal) GetSourceType() string {
-	return e.sourceType
-}
-
-func (e *ErrJsonUnmarshal) TargetType(v string) *ErrJsonUnmarshal {
-	e.targetType = v
-	return e
-}
-
-func (e *ErrJsonUnmarshal) GetTargetType() string {
-	return e.targetType
-}
-
-func (e *ErrJsonUnmarshal) TargetPropertyName(v string) *ErrJsonUnmarshal {
-	e.targetPropertyName = v
-	return e
-}
-
-func (e *ErrJsonUnmarshal) GetTargetPropertyName() string {
-	return e.targetPropertyName
+// TargetPropertyName returns the name of the property the source type could not be unmarshaled into
+func (jue *JsonUnmarshalError) TargetPropertyName() string {
+	return jue.targetPropertyName
 }

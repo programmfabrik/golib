@@ -132,20 +132,23 @@ func JsonUnmarshal(source []byte, target any) (err error) {
 		regex := regexp.MustCompile(`json: cannot unmarshal ([^\s]+) into Go value of type (.+)$`)
 		matches := regex.FindStringSubmatch(err.Error())
 		if len(matches) == 3 {
-			return JsonUnmarshalError().
-				OriginalError(err).
-				SourceType(matches[1]).
-				TargetType(matches[2])
+			return NewJsonUnmarshalError(
+				err,
+				matches[1], // source type
+				matches[2], // target type
+				"",         // no target property name
+			)
 		}
 
 		regex = regexp.MustCompile(`json: cannot unmarshal ([^\s]+) into Go struct field ([^\s]+?) of type (.+)$`)
 		matches = regex.FindStringSubmatch(err.Error())
 		if len(matches) == 4 {
-			return JsonUnmarshalError().
-				OriginalError(err).
-				SourceType(matches[1]).
-				TargetPropertyName(matches[2]).
-				TargetType(matches[3])
+			return NewJsonUnmarshalError(
+				err,
+				matches[1], // source type
+				matches[3], // target type
+				matches[2], // target property name
+			)
 		}
 
 		// no regex match, just return the original error
