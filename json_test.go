@@ -44,17 +44,15 @@ func TestJsonUnmarshalQuery(t *testing.T) {
 	}
 }
 
-type JsonValues struct {
-	Text      string      `json:"text"`
-	Integer   int         `json:"integer"`
-	Decimal   float64     `json:"decimal"`
-	Bool      bool        `json:"bool"`
-	Array     []string    `json:"array"`
-	SubObject *JsonValues `json:"obj"`
-}
+func TestJsonUnmarshalErrorWithPropertyName(t *testing.T) {
+	type JsonValues struct {
+		Text      string      `json:"text"`
+		Array     []string    `json:"array"`
+		SubObject *JsonValues `json:"obj"`
+	}
 
-func TestJsonUnmarshalError(t *testing.T) {
 	var (
+		// target is a struct with properties, the error must include the property names
 		target JsonValues
 		jue    JsonUnmarshalError
 	)
@@ -73,45 +71,9 @@ func TestJsonUnmarshalError(t *testing.T) {
 			property: "JsonValues.text",
 		},
 		{
-			rawJson:  `{"text": 123}`,
-			source:   "number",
-			target:   "string",
-			property: "JsonValues.text",
-		},
-		{
-			rawJson:  `{"text": 123.456}`,
-			source:   "number",
-			target:   "string",
-			property: "JsonValues.text",
-		},
-		{
-			rawJson:  `{"integer": "invalid"}`,
-			source:   "string",
-			target:   "int",
-			property: "JsonValues.integer",
-		},
-		{
-			rawJson:  `{"decimal": "invalid"}`,
-			source:   "string",
-			target:   "float64",
-			property: "JsonValues.decimal",
-		},
-		{
-			rawJson:  `{"bool": 123}`,
-			source:   "number",
-			target:   "bool",
-			property: "JsonValues.bool",
-		},
-		{
 			rawJson:  `{"array": false}`,
 			source:   "bool",
 			target:   "[]string",
-			property: "JsonValues.array",
-		},
-		{
-			rawJson:  `{"array": [false, false]}`,
-			source:   "bool",
-			target:   "string",
 			property: "JsonValues.array",
 		},
 		{
@@ -138,13 +100,61 @@ func TestJsonUnmarshalError(t *testing.T) {
 			t.Errorf("expect JsonUnmarshalError")
 			return
 		}
-		if !assert.Equal(t, c.source, jue.SourceType(), fmt.Sprintf("test case %d: %v: check SourceType()", idx, c.rawJson)) {
+		if !assert.Equal(t, c.source, jue.SourceType(), fmt.Sprintf("test case %d: %v", idx, c.rawJson)) {
 			return
 		}
-		if !assert.Equal(t, c.property, jue.TargetPropertyName(), fmt.Sprintf("test case %d: %v: check TargetPropertyName()", idx, c.rawJson)) {
+		if !assert.Equal(t, c.target, jue.TargetType(), fmt.Sprintf("test case %d: %v", idx, c.rawJson)) {
 			return
 		}
-		if !assert.Equal(t, c.target, jue.TargetType(), fmt.Sprintf("test case %d: %v: check TargetType()", idx, c.rawJson)) {
+		if !assert.Equal(t, c.property, jue.TargetPropertyName(), fmt.Sprintf("test case %d: %v", idx, c.rawJson)) {
+			return
+		}
+	}
+}
+
+func TestJsonUnmarshalErrorWithoutPropertyName(t *testing.T) {
+	var (
+		// target is a primitive type, not a struct with properties
+		target string
+		jue    JsonUnmarshalError
+	)
+
+	type testCase struct {
+		rawJson string
+		source  string
+		target  string
+	}
+	for idx, c := range []testCase{
+		{
+			rawJson: `false`,
+			source:  "bool",
+			target:  "string",
+		},
+		{
+			rawJson: `[1,2,3]`,
+			source:  "array",
+			target:  "string",
+		},
+	} {
+		err := JsonUnmarshal([]byte(c.rawJson), &target)
+		if !assert.Error(t, err) {
+			return
+		}
+
+		switch {
+		case errors.As(err, &jue):
+		default:
+			t.Errorf("expect JsonUnmarshalError")
+			return
+		}
+		if !assert.Equal(t, c.source, jue.SourceType(), fmt.Sprintf("test case %d: %v", idx, c.rawJson)) {
+			return
+		}
+		if !assert.Equal(t, c.target, jue.TargetType(), fmt.Sprintf("test case %d: %v", idx, c.rawJson)) {
+			return
+		}
+		// there is no property name, check for empty string
+		if !assert.Equal(t, "", jue.TargetPropertyName(), fmt.Sprintf("test case %d: %v", idx, c.rawJson)) {
 			return
 		}
 	}

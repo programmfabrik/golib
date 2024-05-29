@@ -1,7 +1,5 @@
 package golib
 
-import "fmt"
-
 type JsonUnmarshalError struct {
 	err                error // original error for reference
 	sourceType         string
@@ -21,13 +19,9 @@ func NewJsonUnmarshalError(err error, sourceType, targetType, targetPropertyName
 	}
 }
 
-// Error returns the parsed out source & target type, and if possible the name of the property, and the original error message
+// Error returns the original error message
 func (jue JsonUnmarshalError) Error() string {
-	propertyInfo := ""
-	if jue.targetPropertyName != "" {
-		propertyInfo = fmt.Sprintf("property: %q, ", jue.targetPropertyName)
-	}
-	return fmt.Sprintf("JsonUnmarshal: %ssource type: %q, target type: %q: %q", propertyInfo, jue.sourceType, jue.targetType, jue.err.Error())
+	return jue.err.Error()
 }
 
 // SourceType returns the type which could not be unmarshaled
