@@ -2,11 +2,11 @@ package golib
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
 
-	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 )
 
@@ -74,7 +74,7 @@ func (loca Localization) Load(reader io.Reader) error {
 			break
 		}
 		if err != nil {
-			return errors.Wrap(err, "Localization.Load: failed")
+			return fmt.Errorf("Localization.Load: failed: %w", err)
 		}
 
 		row = row + 1

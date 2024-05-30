@@ -1,8 +1,6 @@
 package golib
 
-import (
-	"github.com/pkg/errors"
-)
+import "errors"
 
 type CountWriter struct {
 	// This one needs to be a poiner, otherwise it gets reset in every Write call

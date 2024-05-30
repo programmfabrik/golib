@@ -1,6 +1,7 @@
 package golib
 
 import (
+	"errors"
 	"fmt"
 	"net/textproto"
 	"strconv"
@@ -31,7 +32,7 @@ func ParseRange(s string, size int64) ([]HttpRange, error) {
 	}
 	const b = "bytes="
 	if !strings.HasPrefix(s, b) {
-		return nil, fmt.Errorf("invalid range")
+		return nil, errors.New("invalid range")
 	}
 	var ranges []HttpRange
 	noOverlap := false
@@ -42,7 +43,7 @@ func ParseRange(s string, size int64) ([]HttpRange, error) {
 		}
 		i := strings.Index(ra, "-")
 		if i < 0 {
-			return nil, fmt.Errorf("invalid range")
+			return nil, errors.New("invalid range")
 		}
 		start, end := strings.TrimSpace(ra[:i]), strings.TrimSpace(ra[i+1:])
 		var r HttpRange
@@ -51,7 +52,7 @@ func ParseRange(s string, size int64) ([]HttpRange, error) {
 			// range Start relative to the end of the file.
 			i, err := strconv.ParseInt(end, 10, 64)
 			if err != nil {
-				return nil, fmt.Errorf("invalid range")
+				return nil, errors.New("invalid range")
 			}
 			if i > size {
 				i = size
@@ -61,7 +62,7 @@ func ParseRange(s string, size int64) ([]HttpRange, error) {
 		} else {
 			i, err := strconv.ParseInt(start, 10, 64)
 			if err != nil || i < 0 {
-				return nil, fmt.Errorf("invalid range")
+				return nil, errors.New("invalid range")
 			}
 			if i >= size {
 				// If the range begins after the size of the content,
@@ -76,7 +77,7 @@ func ParseRange(s string, size int64) ([]HttpRange, error) {
 			} else {
 				i, err := strconv.ParseInt(end, 10, 64)
 				if err != nil || r.Start > i {
-					return nil, fmt.Errorf("invalid range")
+					return nil, errors.New("invalid range")
 				}
 				if i >= size {
 					i = size - 1
@@ -88,7 +89,7 @@ func ParseRange(s string, size int64) ([]HttpRange, error) {
 	}
 	if noOverlap && len(ranges) == 0 {
 		// The specified ranges did not overlap with the content.
-		return nil, fmt.Errorf("invalid range: failed to overlap")
+		return nil, errors.New("invalid range: failed to overlap")
 	}
 	return ranges, nil
 }

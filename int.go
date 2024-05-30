@@ -1,9 +1,8 @@
 package golib
 
 import (
+	"errors"
 	"math"
-
-	"github.com/pkg/errors"
 )
 
 func Float64ToInt64(f float64) (i int64, err error) {
