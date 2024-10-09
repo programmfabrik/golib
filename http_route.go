@@ -7,10 +7,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Subroute returns the subroute form a Gorilla Mux
-// Subrouter
+// Subroute returns the subroute form a Gorilla Mux Subrouter. It uses the
+// escaped form of the path, so a path like /files/he%2Fnk/more will keep the
+// %2F.
 func Subroute(req *http.Request) string {
-	return req.URL.Path[len(Route(req)):]
+	return req.URL.EscapedPath()[len(Route(req)):]
 }
 
 // Route returns the route from a Gorilla Mux
