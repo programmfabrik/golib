@@ -155,7 +155,8 @@ func FoldStr(s string) string {
 }
 
 // SortStr returns a sortable hex string for s in language lang. To
-// sort, the collate.IgnoreWidth, collate.IgnoreCase are set.
+// sort, the collate.IgnoreWidth, collate.IgnoreCase are set. Strings are normalized
+// to NFC.
 func SortStr(lang language.Tag, s string, opts ...collate.Option) string {
 	opts = append(opts, collate.IgnoreWidth, collate.IgnoreCase)
 	cl := collate.New(lang, opts...)
