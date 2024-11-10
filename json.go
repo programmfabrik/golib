@@ -164,18 +164,7 @@ func JsonUnmarshalObject(source any, target any) error {
 
 		return err
 	}
-	return JsonUnmarshalWithNumber(data, &target)
-}
-
-// JsonUnmarshalWithNumber unmarshals data into value. If the json
-// decoding returns an error with "cannot unmarshal number ... into float64"
-// we try again to unmarshal using "UseNumber"
-var numberMatcher = regexp.MustCompile("cannot unmarshal number .*? into Go value of type float64")
-
-func JsonUnmarshalWithNumber(data []byte, value any) (err error) {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	dec.UseNumber()
-	return dec.Decode(&value)
+	return JsonUnmarshal(data, &target)
 }
 
 // JsonUnmarshalQuery unmarshals a query string into target Every query
