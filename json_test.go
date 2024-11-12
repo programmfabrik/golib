@@ -1,6 +1,7 @@
 package golib
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -11,15 +12,58 @@ import (
 
 func TestJsonUnmarshalQuery(t *testing.T) {
 	type UploadParamsMultiple struct {
-		References      []string `json:"references"`
-		ProduceVersions []bool   `json:"produce_versions"`
-		VersionNames    []string `json:"version_names"`
-		IDParents       []int64  `json:"id_parents"`
+		ID        int64  `json:"id"`
+		IDs       string `json:"ids"`
+		Slice     []string
+		Float64   float64 `json:"float64"`
+		Float32   float32 `json:"float32"`
+		Any       any     `json:"any"`
+		StringPtr *string `json:"str*"`
+		Bool      bool    `json:"bool"`
 	}
-	q := url.URL{RawQuery: "access_token=HENK&check_for_duplicates=1"}
-	u := UploadParamsMultiple{}
-	err := JsonUnmarshalQuery(q.Query(), &u)
+	qv := url.Values{}
+	qv.Set("id", "12")
+	qv.Set("ids", "12,45")
+	qv.Set("float64", "12.34")
+	qv.Set("float32", "12.34")
+	qv.Set("any", "12.34")
+	qv.Set("str*", "strüng")
+	qv.Set("bool", "1")
+
+	sl := []string{"1", "2", "3", "4"}
+	slBs, _ := json.Marshal(sl)
+	qv.Set("Slice", string(slBs))
+
+	upm := UploadParamsMultiple{}
+	err := JsonUnmarshalQuery(qv, &upm)
 	if !assert.NoError(t, err) {
+		return
+	}
+	if !assert.Equal(t, int64(12), upm.ID) {
+		return
+	}
+	if !assert.Equal(t, "12,45", qv.Get("ids")) {
+		return
+	}
+	if !assert.Equal(t, sl, upm.Slice) {
+		return
+	}
+	if !assert.Equal(t, float64(12.34), upm.Float64) {
+		return
+	}
+	if !assert.Equal(t, float32(12.34), upm.Float32) {
+		return
+	}
+	if !assert.Equal(t, 12.34, upm.Any) { // parsed to float
+		return
+	}
+	if !assert.Equal(t, true, upm.StringPtr != nil) {
+		return
+	}
+	if !assert.Equal(t, "strüng", *upm.StringPtr) {
+		return
+	}
+	if !assert.Equal(t, true, upm.Bool) {
 		return
 	}
 }

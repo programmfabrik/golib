@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
 	"os"
+	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -167,28 +170,80 @@ func JsonUnmarshalObject(source any, target any) error {
 	return JsonUnmarshal(data, &target)
 }
 
-// JsonUnmarshalQuery unmarshals a query string into target Every query
-// parameter needs to be unmarshalled separately Otherwise they'll be considered
-// json strings and unable to unmarshal in top struct In the case of raw strings
-// (no object/array/number etc), it will not unmarshall For this one, we just
-// directly assign the raw value
-func JsonUnmarshalQuery(qv url.Values, target interface{}) error {
-	m := map[string]interface{}{}
-	for k, vs := range qv {
-		var mm interface{}
-		err := json.Unmarshal([]byte(vs[0]), &mm)
-		if err != nil {
-			mm = vs[0]
+// JsonUnmarshalQuery unmarshals a query string into target. Only the
+// first value of each query key is used. The target is a struct where
+// the json tags are used to find the query key. The value is parsed
+// according to the type of the target struct field.
+func JsonUnmarshalQuery(qv url.Values, target any) (err error) {
+	// Ensure that target is a pointer to a struct
+	rv := reflect.ValueOf(target)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		return errors.New("target must be a non-nil pointer to a struct")
+	}
+	rv = rv.Elem()
+	if rv.Kind() != reflect.Struct {
+		return errors.New("target must be a pointer to a struct")
+	}
+	rt := rv.Type()
+
+	sourceData := map[string]any{}
+	for i := 0; i < rv.NumField(); i++ {
+		// fieldValue := rv.Field(i)
+		fInfo := rt.Field(i)
+
+		if !fInfo.IsExported() {
+			continue
 		}
-		switch v := mm.(type) {
-		case string:
-			if v == "" {
-				continue
-			}
-			m[k] = v
+		fieldName := fInfo.Tag.Get("json")
+		switch fieldName {
+		case "-":
+			// skip this
+			continue
+		case "":
+			fieldName = fInfo.Name
 		default:
-			m[k] = v
+			// already set
+		}
+
+		v := qv.Get(fieldName)
+		if v == "" {
+			continue
+		}
+
+		fType := fInfo.Type
+		for fType.Kind() == reflect.Pointer {
+			fType = fType.Elem()
+		}
+
+		// Pln("field %q type %q kind %q name %q value %q", fInfo.Name, fInfo.Type, fType.Kind(), fieldName, v)
+
+		switch fType.Kind() {
+		case reflect.String:
+			sourceData[fieldName] = v
+		case reflect.Int, reflect.Int16, reflect.Int8, reflect.Int32, reflect.Int64:
+			i, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return fmt.Errorf("JsonUnmarshalQuery: value %q for field %q is not %s", v, fInfo.Name, fInfo.Type.Kind())
+			}
+			sourceData[fieldName] = i
+		case reflect.Float64, reflect.Float32:
+			fl, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return fmt.Errorf("JsonUnmarshalQuery: value %q for field %q is not %s", v, fInfo.Name, fInfo.Type.Kind())
+			}
+			sourceData[fieldName] = fl
+		case reflect.Slice, reflect.Interface:
+			// value must be JSON
+			sourceData[fieldName] = json.RawMessage([]byte(v))
+		case reflect.Bool:
+			sourceData[fieldName] = GetBool(v)
+		default:
+			return fmt.Errorf("JsonUnmarshalQuery: unsupported field %q with type %q and value %q", fInfo.Name, fInfo.Type.Kind(), v)
 		}
 	}
-	return JsonUnmarshalObject(m, target)
+	err = JsonUnmarshalObject(sourceData, target)
+	if err != nil {
+		return fmt.Errorf("JsonUnmarshalQuery: %w", err)
+	}
+	return nil
 }
