@@ -11,15 +11,20 @@ import (
 )
 
 func TestJsonUnmarshalQuery(t *testing.T) {
+	type customType struct {
+		Henk  string `json:"henk"`
+		Horst int    `json:"horst"`
+	}
 	type UploadParamsMultiple struct {
 		ID        int64  `json:"id"`
 		IDs       string `json:"ids"`
 		Slice     []string
-		Float64   float64 `json:"float64"`
-		Float32   float32 `json:"float32"`
-		Any       any     `json:"any"`
-		StringPtr *string `json:"str*"`
-		Bool      bool    `json:"bool"`
+		Float64   float64     `json:"float64"`
+		Float32   float32     `json:"float32"`
+		Any       any         `json:"any"`
+		StringPtr *string     `json:"str*"`
+		Bool      bool        `json:"bool"`
+		Custom    *customType `json:"mytype"`
 	}
 	qv := url.Values{}
 	qv.Set("id", "12")
@@ -33,6 +38,14 @@ func TestJsonUnmarshalQuery(t *testing.T) {
 	sl := []string{"1", "2", "3", "4"}
 	slBs, _ := json.Marshal(sl)
 	qv.Set("Slice", string(slBs))
+
+	mt := customType{
+		Henk:  "henk",
+		Horst: 123,
+	}
+
+	mtBs, _ := json.Marshal(mt)
+	qv.Set("mytype", string(mtBs))
 
 	upm := UploadParamsMultiple{}
 	err := JsonUnmarshalQuery(qv, &upm)
@@ -64,6 +77,12 @@ func TestJsonUnmarshalQuery(t *testing.T) {
 		return
 	}
 	if !assert.Equal(t, true, upm.Bool) {
+		return
+	}
+	if !assert.Equal(t, true, upm.Custom != nil) {
+		return
+	}
+	if !assert.Equal(t, mt, *upm.Custom) {
 		return
 	}
 }

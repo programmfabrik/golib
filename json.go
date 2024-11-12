@@ -238,7 +238,8 @@ func JsonUnmarshalQuery(qv url.Values, target any) (err error) {
 		case reflect.Bool:
 			sourceData[fieldName] = GetBool(v)
 		default:
-			return fmt.Errorf("JsonUnmarshalQuery: unsupported field %q with type %q and value %q", fInfo.Name, fInfo.Type.Kind(), v)
+			// assume JSON
+			sourceData[fieldName] = json.RawMessage([]byte(v))
 		}
 	}
 	err = JsonUnmarshalObject(sourceData, target)
