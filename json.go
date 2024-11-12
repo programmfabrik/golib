@@ -194,7 +194,14 @@ func JsonUnmarshalQuery(qv url.Values, target any) (err error) {
 		if !fInfo.IsExported() {
 			continue
 		}
-		fieldName := fInfo.Tag.Get("json")
+		parts := strings.Split(fInfo.Tag.Get("json"), ",")
+		var fieldName string
+		switch len(parts) {
+		case 0:
+			fieldName = fInfo.Name
+		default:
+			fieldName = parts[0]
+		}
 		switch fieldName {
 		case "-":
 			// skip this

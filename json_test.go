@@ -20,7 +20,7 @@ func TestJsonUnmarshalQuery(t *testing.T) {
 		IDs       string `json:"ids"`
 		Slice     []string
 		Float64   float64     `json:"float64"`
-		Float32   float32     `json:"float32"`
+		Float32   float32     `json:"float32,omitempty"`
 		Any       any         `json:"any"`
 		StringPtr *string     `json:"str*"`
 		Bool      bool        `json:"bool"`
