@@ -24,6 +24,8 @@ func TestJsonUnmarshalQuery(t *testing.T) {
 		Any       any         `json:"any"`
 		StringPtr *string     `json:"str*"`
 		Bool      bool        `json:"bool"`
+		BoolPtr   *bool       `json:"bool*"`
+		Bool2Ptr  *bool       `json:"bool2*"`
 		Custom    *customType `json:"mytype"`
 	}
 	qv := url.Values{}
@@ -34,6 +36,7 @@ func TestJsonUnmarshalQuery(t *testing.T) {
 	qv.Set("any", "12.34")
 	qv.Set("str*", "strüng")
 	qv.Set("bool", "1")
+	qv.Set("bool2*", "false")
 
 	sl := []string{"1", "2", "3", "4"}
 	slBs, _ := json.Marshal(sl)
@@ -83,6 +86,13 @@ func TestJsonUnmarshalQuery(t *testing.T) {
 		return
 	}
 	if !assert.Equal(t, mt, *upm.Custom) {
+		return
+	}
+	var bool *bool
+	if !assert.Equal(t, bool, upm.BoolPtr) {
+		return
+	}
+	if !assert.Equal(t, false, *upm.Bool2Ptr) {
 		return
 	}
 }
