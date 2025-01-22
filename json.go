@@ -25,21 +25,32 @@ func JsonWriteFile(fn string, v interface{}) error {
 	return err
 }
 
-// Reads the given file into the given value
-// If the filename ends in ".gz", it is opened
-// using the gzip library.
-func JsonReadFile(fn string, v interface{}) error {
+// countingReader wraps an io.Reader and counts how many bytes have been read.
+type countingReader struct {
+	r io.Reader
+	n int64
+}
+
+func (c *countingReader) Read(p []byte) (int, error) {
+	readBytes, err := c.r.Read(p)
+	c.n += int64(readBytes)
+	return readBytes, err
+}
+
+// Reads the given file into the given value If the filename ends in ".gz", it
+// is opened using the gzip library. Returns the bytes read (unzipped)
+func JsonReadFile(fn string, v interface{}) (int64, error) {
 	var reader io.Reader
 	fh, err := os.Open(fn)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer fh.Close()
 
 	if strings.HasSuffix(fn, ".gz") {
 		gzip, err := gzip.NewReader(fh)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		defer gzip.Close()
 		reader = gzip
@@ -47,7 +58,10 @@ func JsonReadFile(fn string, v interface{}) error {
 		reader = fh
 	}
 
-	return JsonUnmarshalReader(reader, v)
+	// Wrap the chosen reader in a countingReader.
+	cr := &countingReader{r: reader}
+
+	return cr.n, JsonUnmarshalReader(cr, v)
 }
 
 func JsonUnmarshalReader(r io.Reader, v interface{}) (err error) {

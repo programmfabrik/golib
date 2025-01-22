@@ -1,6 +1,8 @@
 module github.com/programmfabrik/golib
 
-go 1.18
+go 1.22.0
+
+toolchain go1.23.2
 
 require (
 	github.com/antchfx/xmlquery v1.4.1
@@ -11,6 +13,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/yuin/goldmark v1.7.4
 	golang.org/x/crypto v0.26.0
+	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	golang.org/x/text v0.17.0
 )
 
