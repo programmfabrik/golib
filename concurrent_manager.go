@@ -123,3 +123,10 @@ func (cm *cmT) Wait() error {
 	}
 	return nil
 }
+
+// Reset resets the manager to the
+func (cm *cmT) Reset() {
+	cm.ordered = map[int][]OrderedFunc{}
+	cm.finished = false
+	cm.runners = 0
+}
