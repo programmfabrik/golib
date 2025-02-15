@@ -59,7 +59,8 @@ func (cm *cmT) Ordered(runId int, f OrderedFunc) {
 }
 
 // Run executes f. Waits for a worker to be available. This should be called in a Go routine. Panics
-// are caught and can be retrieved when using cm.Error().
+// are caught and can be retrieved when using cm.Error(). If the manager is in error state,
+// Run returns an error
 func (cm *cmT) Run(f RunFunc) (runID int) {
 	cm.sem <- true
 	cm.wg.Add(1)
@@ -95,6 +96,11 @@ func (cm *cmT) Run(f RunFunc) (runID int) {
 	return cm.runners
 }
 
+// Errors returns the accumulated errors so far.
+func (cm *cmT) Errors() []error {
+	return cm.errs
+}
+
 // Wait waits until all workers have finished. It returns an error if any of the
 // func "Run" calls returned an error or panicked. In case that no errors
 // occurred, Wait also call all functions registered with "Ordered" in the order
@@ -128,5 +134,6 @@ func (cm *cmT) Wait() error {
 func (cm *cmT) Reset() {
 	cm.ordered = map[int][]OrderedFunc{}
 	cm.finished = false
+	cm.errs = []error{}
 	cm.runners = 0
 }
