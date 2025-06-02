@@ -24,11 +24,22 @@ func IntMin(x, y int) int {
 	return x
 }
 
+// Pln output s + args to os.Stderr. fmt.Sprintf is used unless args are omitted.
 func Pln(s string, args ...interface{}) {
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, s)
 	} else {
 		fmt.Fprintf(os.Stderr, s+"\n", args...)
+	}
+}
+
+// Pretty formats els as json (with indentation) and outputs it to os.Stderr
+func Pretty(els ...interface{}) {
+	for idx, el := range els {
+		if idx > 0 {
+			Pln("---")
+		}
+		Pln(JsonStringIndent(el, "", "    "))
 	}
 }
 

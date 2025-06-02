@@ -1,9 +1,11 @@
 package golib
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/text/collate"
 	"golang.org/x/text/language"
 )
 
@@ -48,3 +50,25 @@ func TestSortStr(t *testing.T) {
 		return
 	}
 }
+
+func TestSortStr2(t *testing.T) {
+	lang := language.Make("de-DE")
+	s1 := SortStr(lang, "000000001-234", collate.Numeric)
+	s2 := SortStr(lang, "20201007-123", collate.Numeric)
+	s3 := SortStr(lang, "00000000-123", collate.Numeric)
+
+	s := []string{s2, s3, s1}
+	sort.Strings(s)
+	if !assert.Equal(t, []string{s1, s2, s3}, s) {
+		return
+	}
+
+	s = []string{s1, s2}
+	sort.Strings(s)
+	if !assert.Equal(t, []string{s1, s2}, s) {
+		return
+	}
+}
+
+// 14f0049c14f0000114e7        0000002000200020002000200020
+// 14f0000114e7049c14f0000114e700000020002000200020002000200020
