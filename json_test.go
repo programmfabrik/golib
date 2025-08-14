@@ -121,25 +121,25 @@ func TestJsonUnmarshalErrorWithPropertyName(t *testing.T) {
 			rawJson:  `{"text": false}`,
 			source:   "bool",
 			target:   "string",
-			property: "JsonValues.text",
+			property: "text",
 		},
 		{
 			rawJson:  `{"array": false}`,
 			source:   "bool",
 			target:   "[]string",
-			property: "JsonValues.array",
+			property: "array",
 		},
 		{
 			rawJson:  `{"obj": false}`,
 			source:   "bool",
 			target:   "golib.JsonValues",
-			property: "JsonValues.obj",
+			property: "obj",
 		},
 		{
 			rawJson:  `{"obj": {"array": "invalid"}}`,
 			source:   "string",
 			target:   "[]string",
-			property: "JsonValues.obj.array",
+			property: "obj.array",
 		},
 	} {
 		err := JsonUnmarshal([]byte(c.rawJson), &target)
@@ -150,7 +150,7 @@ func TestJsonUnmarshalErrorWithPropertyName(t *testing.T) {
 		switch {
 		case errors.As(err, &jue):
 		default:
-			t.Errorf("expect JsonUnmarshalError")
+			t.Errorf("expect JsonUnmarshalError: test case %d: %v\nerror: %s", idx, c.rawJson, err.Error())
 			return
 		}
 		if !assert.Equal(t, c.source, jue.SourceType(), fmt.Sprintf("test case %d: %v", idx, c.rawJson)) {
