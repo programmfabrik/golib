@@ -55,9 +55,9 @@ func TestSortStr(t *testing.T) {
 
 func TestSortStr2(t *testing.T) {
 	lang := language.Make("de-DE")
-	s1 := SortStr(lang, "000000001-234", collate.Numeric)
-	s2 := SortStr(lang, "20201007-123", collate.Numeric)
-	s3 := SortStr(lang, "00000000-123", collate.Numeric)
+	s1 := SortStr(lang, "00000000-123", collate.Numeric)
+	s2 := SortStr(lang, "000000001-234", collate.Numeric)
+	s3 := SortStr(lang, "20201007-123", collate.Numeric)
 
 	s := []string{s2, s3, s1}
 
@@ -66,7 +66,7 @@ func TestSortStr2(t *testing.T) {
 		return
 	}
 
-	s = []string{s1, s2}
+	s = []string{s2, s1}
 	sort.Strings(s)
 	if !assert.Equal(t, []string{s1, s2}, s) {
 		return
@@ -91,6 +91,12 @@ func TestSortStr3(t *testing.T) {
 	}
 	sortStrings(s)
 	if !assert.Equal(t, []string{"0 null", "1 eins", "10 zehn", "100 hundert", "11 elf", "2 zwei", "9 yo"}, s) {
+		return
+	}
+
+	s = []string{"20200901-123", "000000001-234", "00000001-123"}
+	sortStrings(s, collate.Numeric)
+	if !assert.Equal(t, []string{"00000001-123", "000000001-234", "20200901-123"}, s) {
 		return
 	}
 }

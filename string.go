@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"encoding/hex"
 	"fmt"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -157,13 +158,15 @@ func FoldStr(s string) string {
 // SortStr returns a sortable hex string for s in language lang. To sort, the
 // collate.IgnoreWidth, collate.IgnoreCase are set. Strings are normalized to
 // NFC.
+var zeroRun = regexp.MustCompile(`(^|[^0-9-])(0+)([^0-9]|$)`)
+
 func SortStr(lang language.Tag, s string, opts ...collate.Option) string {
 	opts = append(opts, collate.IgnoreWidth, collate.IgnoreCase)
 	cl := collate.New(lang, opts...)
 	// check if we have collate.Numeric
 	if cl.CompareString("2", "10") < 0 {
 		// replace "0" with "₀" to fix sorting: https://github.com/golang/go/issues/75688
-		s = strings.ReplaceAll(s, "0", "₀")
+		s = zeroRun.ReplaceAllString(s, `$1₀$3`)
 	}
 	buf := new(collate.Buffer)
 	return hex.EncodeToString(cl.KeyFromString(buf, s))
