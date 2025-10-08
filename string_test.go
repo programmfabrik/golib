@@ -1,7 +1,9 @@
 package golib
 
 import (
+	"slices"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,6 +60,7 @@ func TestSortStr2(t *testing.T) {
 	s3 := SortStr(lang, "00000000-123", collate.Numeric)
 
 	s := []string{s2, s3, s1}
+
 	sort.Strings(s)
 	if !assert.Equal(t, []string{s1, s2, s3}, s) {
 		return
@@ -66,6 +69,28 @@ func TestSortStr2(t *testing.T) {
 	s = []string{s1, s2}
 	sort.Strings(s)
 	if !assert.Equal(t, []string{s1, s2}, s) {
+		return
+	}
+}
+
+func TestSortStr3(t *testing.T) {
+	lang := language.Make("de-DE")
+
+	sortStrings := func(ss []string, opts ...collate.Option) {
+		slices.SortStableFunc(ss, func(a, b string) int {
+			return strings.Compare(SortStr(lang, a, opts...), SortStr(lang, b, opts...))
+		})
+	}
+
+	s := []string{"2 zwei", "1 eins", "11 elf", "100 hundert", "10 zehn", "9 yo", "0 null"}
+	// cl := collate.New(language.Make("de-DE"), collate.IgnoreWidth, collate.IgnoreCase, collate.Numeric)
+	// cl.SortStrings(s)
+	sortStrings(s, collate.Numeric)
+	if !assert.Equal(t, []string{"0 null", "1 eins", "2 zwei", "9 yo", "10 zehn", "11 elf", "100 hundert"}, s) {
+		return
+	}
+	sortStrings(s)
+	if !assert.Equal(t, []string{"0 null", "1 eins", "10 zehn", "100 hundert", "11 elf", "2 zwei", "9 yo"}, s) {
 		return
 	}
 }

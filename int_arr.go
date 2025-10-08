@@ -123,6 +123,11 @@ func (ic *IntArr) Remove(i_s ...int64) {
 	*ic = ic2[:]
 }
 
+// Diff returns
+//
+//	New: ints are in ic2 but not in ic1
+//	Same: ints are in ic1 and ic2
+//	Removed: ints are in ic1 but not in ic2
 func (ic1 IntArr) Diff(ic2 IntArr) IntDiffMap {
 	m := IntDiffMap{
 		New:     IntArr{},
