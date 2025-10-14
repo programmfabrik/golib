@@ -103,3 +103,7 @@ func (rep Replacer) Debug() (ss []string) {
 	}
 	return ss
 }
+
+func (rep Replacer) Repl() map[string]string {
+	return rep.repl
+}
