@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync"
 )
@@ -77,6 +78,8 @@ func (cm *cmT) Run(f RunFunc) (runID int) {
 		defer func() {
 			r := recover()
 			if r != nil {
+				Pln("panic: %v", r)
+				debug.PrintStack()
 				var ok bool
 				err, ok = r.(error)
 				if !ok {
@@ -96,9 +99,17 @@ func (cm *cmT) Run(f RunFunc) (runID int) {
 	return cm.runners
 }
 
-// Errors returns the accumulated errors so far.
-func (cm *cmT) Errors() []error {
-	return cm.errs
+// CombineErrors returs an error containing all current errors combined. If no
+// errors are present, it returns <nil>
+func (cm *cmT) CombineErrors() error {
+	if len(cm.errs) == 0 {
+		return nil
+	}
+	errS := []string{}
+	for _, err := range cm.errs {
+		errS = append(errS, err.Error())
+	}
+	return errors.New(strings.Join(errS, ", "))
 }
 
 // Wait waits until all workers have finished. It returns an error if any of the
@@ -113,11 +124,7 @@ func (cm *cmT) Wait() error {
 	cm.mu.Unlock()
 	cm.wg.Wait()
 	if len(cm.errs) > 0 {
-		errS := []string{}
-		for _, err := range cm.errs {
-			errS = append(errS, err.Error())
-		}
-		return errors.New(strings.Join(errS, ", "))
+		return cm.CombineErrors()
 	}
 	for runId := 1; runId <= cm.runners; runId++ {
 		for _, f := range cm.ordered[runId] {
