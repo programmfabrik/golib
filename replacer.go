@@ -5,7 +5,13 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+// Global regexp cache for empty key replacers. If used in hot paths the
+// compilation of the regexp uses a lot of CPU.
+var precReMtx = sync.Mutex{}
+var precRe = map[string]*regexp.Regexp{}
 
 type Replacer struct {
 	EmptyKeys []*regexp.Regexp // regexp to match empty key
@@ -27,8 +33,18 @@ func (rep *Replacer) SetInt64(key string, value int64) {
 	rep.Set(key, strconv.FormatInt(value, 10))
 }
 
-func (rep *Replacer) AddEmptyKeyReplacer(s string) {
-	rep.EmptyKeys = append(rep.EmptyKeys, regexp.MustCompile(s))
+// AddEmptyKeyReplacer adds all regexps as empty key replacers. It replaces
+// matching parts of the string with "" when Replace is called. The regexp are
+// cached in this package and never expire.
+func (rep *Replacer) AddEmptyKeyReplacer(regexps ...string) {
+	precReMtx.Lock()
+	defer precReMtx.Unlock()
+	for _, s := range regexps {
+		if _, has := precRe[s]; !has {
+			precRe[s] = regexp.MustCompile(s)
+		}
+		rep.EmptyKeys = append(rep.EmptyKeys, precRe[s])
+	}
 }
 
 func (rep *Replacer) Replace(s string) string {
