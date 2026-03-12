@@ -1,8 +1,6 @@
 module github.com/programmfabrik/golib
 
-go 1.22.0
-
-toolchain go1.23.2
+go 1.26.0
 
 require (
 	github.com/antchfx/xmlquery v1.4.1
