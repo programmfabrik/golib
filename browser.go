@@ -6,11 +6,13 @@ import (
 )
 
 func IsDisplayableInBrowser(e string) bool {
-	ext := strings.ToLower(e)
-	for _, extOk := range []string{"jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"} {
-		if extOk == ext {
-			return true
-		}
+	switch e {
+	case "jpg", "jpeg", "png", "gif", "webp", "svg", "bmp":
+		return true
+	}
+	switch strings.ToLower(e) {
+	case "jpg", "jpeg", "png", "gif", "webp", "svg", "bmp":
+		return true
 	}
 	return false
 }
