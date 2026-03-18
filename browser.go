@@ -2,19 +2,15 @@ package golib
 
 import (
 	"net/url"
+	"slices"
 	"strings"
 )
 
+// List of extensions a browser can display
+var ExtDisplayableInBrowser = []string{"jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"}
+
 func IsDisplayableInBrowser(e string) bool {
-	switch e {
-	case "jpg", "jpeg", "png", "gif", "webp", "svg", "bmp":
-		return true
-	}
-	switch strings.ToLower(e) {
-	case "jpg", "jpeg", "png", "gif", "webp", "svg", "bmp":
-		return true
-	}
-	return false
+	return slices.Contains(ExtDisplayableInBrowser, strings.ToLower(e))
 }
 
 func ContentDisposition(disposition string, filename string) (key, value string) {
