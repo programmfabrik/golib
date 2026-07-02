@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"golang.org/x/text/cases"
@@ -161,6 +162,10 @@ func FoldStr(s string) string {
 var zeroRun = regexp.MustCompile(`(^|[^0-9-])(0+)([^0-9]|$)`)
 
 func SortStr(lang language.Tag, s string, opts ...collate.Option) string {
+	if len(opts) == 0 {
+		return sortStrCached(lang, s, false)
+	}
+	// arbitrary options cannot serve as a cache key, build the collator
 	opts = append(opts, collate.IgnoreWidth, collate.IgnoreCase)
 	cl := collate.New(lang, opts...)
 	// check if we have collate.Numeric
@@ -170,6 +175,67 @@ func SortStr(lang language.Tag, s string, opts ...collate.Option) string {
 	}
 	buf := new(collate.Buffer)
 	return hex.EncodeToString(cl.KeyFromString(buf, s))
+}
+
+// SortStrNumeric works like SortStr with collate.Numeric set, using a cached
+// collator. collate.New is expensive, so the collators are pooled per
+// language.
+func SortStrNumeric(lang language.Tag, s string) string {
+	return sortStrCached(lang, s, true)
+}
+
+var sortCollators sync.Map // map[sortCollatorKey]*sortCollatorPool
+
+type sortCollatorKey struct {
+	lang    language.Tag
+	numeric bool
+}
+
+// sortCollator pairs a collator with its key buffer. collate.Collator is not
+// safe for concurrent use, so instances are pooled.
+type sortCollator struct {
+	cl  *collate.Collator
+	buf collate.Buffer
+}
+
+type sortCollatorPool struct {
+	pool sync.Pool
+	// numeric records whether the collator sorts numerically ("2" < "10"),
+	// which can come from the collate.Numeric option or the language tag
+	numeric bool
+}
+
+func sortStrCached(lang language.Tag, s string, numeric bool) string {
+	key := sortCollatorKey{lang: lang, numeric: numeric}
+	v, ok := sortCollators.Load(key)
+	if !ok {
+		v, _ = sortCollators.LoadOrStore(key, newSortCollatorPool(lang, numeric))
+	}
+	p := v.(*sortCollatorPool)
+	if p.numeric {
+		// replace "0" with "₀" to fix sorting: https://github.com/golang/go/issues/75688
+		s = zeroRun.ReplaceAllString(s, `$1₀$3`)
+	}
+	c := p.pool.Get().(*sortCollator)
+	s = hex.EncodeToString(c.cl.KeyFromString(&c.buf, s))
+	c.buf.Reset()
+	p.pool.Put(c)
+	return s
+}
+
+func newSortCollatorPool(lang language.Tag, numeric bool) *sortCollatorPool {
+	newC := func() *sortCollator {
+		opts := []collate.Option{collate.IgnoreWidth, collate.IgnoreCase}
+		if numeric {
+			opts = append(opts, collate.Numeric)
+		}
+		return &sortCollator{cl: collate.New(lang, opts...)}
+	}
+	c := newC()
+	p := &sortCollatorPool{numeric: c.cl.CompareString("2", "10") < 0}
+	p.pool.New = func() any { return newC() }
+	p.pool.Put(c)
+	return p
 }
 
 // Split string s into byte chunks of a max size of chunkSize Each string

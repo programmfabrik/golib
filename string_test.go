@@ -1,9 +1,11 @@
 package golib
 
 import (
+	"encoding/hex"
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,6 +72,56 @@ func TestSortStr2(t *testing.T) {
 	sort.Strings(s)
 	if !assert.Equal(t, []string{s1, s2}, s) {
 		return
+	}
+}
+
+// TestSortStrCached checks that the cached collator paths return the same
+// keys as freshly built collators (including numeric sorting requested by the
+// language tag instead of collate.Numeric), also when used concurrently.
+func TestSortStrCached(t *testing.T) {
+	inputs := []string{"café", "café", "00000000-123", "20201007-123", "2 zwei", "10 zehn", "Ähre"}
+
+	uncached := func(lang language.Tag, s string, opts ...collate.Option) string {
+		opts = append(opts, collate.IgnoreWidth, collate.IgnoreCase)
+		cl := collate.New(lang, opts...)
+		if cl.CompareString("2", "10") < 0 {
+			s = zeroRun.ReplaceAllString(s, `$1₀$3`)
+		}
+		buf := new(collate.Buffer)
+		return hex.EncodeToString(cl.KeyFromString(buf, s))
+	}
+
+	for _, lang := range []language.Tag{
+		language.Make("de-DE"),
+		language.Make("en"),
+		language.Make("de-DE-u-kn-true"), // numeric by tag
+	} {
+		for _, s := range inputs {
+			assert.Equal(t, uncached(lang, s), SortStr(lang, s), "plain %s %q", lang, s)
+			assert.Equal(t, uncached(lang, s, collate.Numeric), SortStrNumeric(lang, s), "numeric %s %q", lang, s)
+		}
+	}
+
+	lang := language.Make("de-DE")
+	wg := sync.WaitGroup{}
+	for range 8 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 500 {
+				for _, s := range inputs {
+					assert.Equal(t, uncached(lang, s, collate.Numeric), SortStrNumeric(lang, s))
+				}
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func BenchmarkSortStrNumeric(b *testing.B) {
+	lang := language.Make("de-DE")
+	for b.Loop() {
+		SortStrNumeric(lang, "20201007-123 example title")
 	}
 }
 
